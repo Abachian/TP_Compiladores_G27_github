@@ -1,0 +1,4 @@
+ { prog
+  SHORT ca,
+  ca = 1_s,
+},

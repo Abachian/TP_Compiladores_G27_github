@@ -1,0 +1,11 @@
+{ prog
+  CLASS cc {
+     UINT b,
+     SHORT a,
+     DOUBLE vv,
+     VOID m() {
+        b = 5_s,
+        vv = b,
+      },
+  }
+},

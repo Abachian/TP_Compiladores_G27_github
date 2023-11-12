@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="TP Compiladores_G27:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/TP_Compiladores_G27_jar</output-path>
+    <root id="archive" name="TP Compiladores_G27.jar">
+      <element id="module-output" name="TP Compiladores_G27" />
+    </root>
+  </artifact>
+</component>

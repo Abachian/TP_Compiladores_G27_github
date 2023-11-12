@@ -1,0 +1,6 @@
+{ prog
+DO {
+   b= 1_ui+4_ui,
+}  UNTIL(a<8_s),
+
+},

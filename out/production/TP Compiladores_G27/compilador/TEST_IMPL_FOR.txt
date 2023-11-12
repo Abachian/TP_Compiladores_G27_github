@@ -1,0 +1,17 @@
+{
+prog
+CLASS ca {
+UINT a;c,
+VOID m() {
+ a = 2_ui,
+},
+VOID p(),
+}
+IMPL FOR ca: {
+VOID p() {
+   c = 4_ui,
+},
+
+}
+
+},

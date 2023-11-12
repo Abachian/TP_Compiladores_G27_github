@@ -1,0 +1,10 @@
+{ prog
+IF (a<8_s) {
+   b= 1_ui+4_ui,
+}
+ELSE {
+   b= 1_s,
+}
+END_IF,
+
+},
