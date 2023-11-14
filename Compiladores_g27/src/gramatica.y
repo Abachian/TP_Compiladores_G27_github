@@ -31,7 +31,9 @@ program: begin header_program cuerpo_prog end ','
 		| ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un programa");}
 ;
 
-header_program: nombre_programa { Parser.declarando = true;}
+header_program: nombre_programa { Parser.declarando = true; tipo = TablaTipos.STRING_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval + Parser.ambito.toString());
+                                                                                         TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
+                                                                                         TablaSimbolos.agregarAtributo(ptr_id, "uso", "Nombre del programa");}
 ;
 
 begin: '{'
@@ -57,8 +59,8 @@ declaraciones: declaraciones declaracion
 ;
 
 declaracion: declaracion_variables
-        	| declaracion_funcion {agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");}
-        	| declaracion_clase {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");}
+        	| declaracion_funcion
+        	| declaracion_clase
         	| declaracion_variables_clase
 ;
 
@@ -94,7 +96,10 @@ funcion_sin_definir: header_funcion '(' list_de_parametros ')' ','
 ;
 
 
-header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);}
+header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+			TablaSimbolos.agregarAtributo(ptr_id, "tipo", "VOID_TYPE");
+                    	TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de metodo");
+                    	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");}
             | VOID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera nombre de la funcion");}
 ;
 
@@ -107,16 +112,21 @@ list_de_parametros:
 ;
 
 
-parametro: tipo ID {}
+parametro: tipo ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
+	     	    TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
+                    TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");}
           | ID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el tipo del parametro");}
           | tipo {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el nombre del parametro");}
-	      | CLASS ID
+	      | CLASS ID {tipo = TablaTipos.CLASS_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
+                                                                                     TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
+                                                                                     TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");}
 ;
 
 
 tipo: UINT {tipo = TablaTipos.UINT_TYPE;}
     | SHORT {tipo = TablaTipos.SHORT_TYPE;}
     | DOUBLE {tipo = TablaTipos.DOUBLE_TYPE;}
+
 ;
 
 ejecucion_funcion:  bloque_funcion {}
@@ -151,11 +161,11 @@ referencia_clase: ID '.' ID '=' ID
 		| ID '.' ID '(' list_de_parametros ')'
 ;
 
-DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
+DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')'
 		| pdo UNTIL '(' condicion ')' { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias entre DO y UNTIL"); }
 ;
 
-pdo: DO
+pdo: DO {agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
 ;
 
 bloque_sentencias_do: '{' sentencia_ejecutable_do RETURN '(' expresion ')' ',' '}'
@@ -179,27 +189,28 @@ sentencia_do:    DO_UNTIL ';'
 
 ;
 
-seleccion_en_do: IF condicion_salto_if if_seleccion_do END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF en DO");}
-        | IF condicion_salto_if if_seleccion_do else_seleccion_do END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
-        | IF condicion_salto_if if_seleccion_do bloque_sentencias_do END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
-        | IF condicion_salto_if if_seleccion_do ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
+seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF
+        | header_if condicion_salto_if if_seleccion_do else_seleccion_do END_IF
+        | header_if condicion_salto_if if_seleccion_do bloque_sentencias_do END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
+        | header_if condicion_salto_if if_seleccion_do ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
+;
+
+header_if: IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
 ;
 
 if_seleccion_do: bloque_sentencias_do
  ;
 
-
-
 else_seleccion_do: ELSE bloque_sentencias_do ;
 				| ELSE ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
 ;
  
-seleccion: IF condicion_salto_if '{' if_seleccion '}' END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
-		| IF condicion_salto_if  if_seleccion  END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }
-        | IF condicion_salto_if '{' if_seleccion '}' else_seleccion END_IF
-        | IF condicion_salto_if if_seleccion begin ejecucion end ',' END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
-        | IF condicion_salto_if END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias luego del Then"); }
-        | IF condicion_salto_if if_seleccion ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
+seleccion: header_if condicion_salto_if '{' if_seleccion '}' END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
+		| header_if condicion_salto_if  if_seleccion  END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }
+        | header_if condicion_salto_if '{' if_seleccion '}' else_seleccion END_IF
+        | header_if condicion_salto_if if_seleccion begin ejecucion end ',' END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
+        | header_if condicion_salto_if END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias luego del Then"); }
+        | header_if condicion_salto_if if_seleccion ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
 ;
 
 
@@ -248,7 +259,7 @@ comparador: comp_distinto
         | '>'
 ;
 
-asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
+asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion"); }
 			| ID SUMA '(' expresion ')'{agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
 			| ID '=' expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
 			| ID SUMA expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
@@ -282,10 +293,13 @@ factor_positivo: ID
                 | ID '('list_parametros_reales')'{}
 ;
 
-constante: cte {int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval);}
+constante: cte {int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval);
+		TablaSimbolos.agregarAtributo(ptr_id, "uso", "constante");
+		TablaSimbolos.agregarAtributo(ptr_id, "tipo", TablaSimbolos.getTipo($1.sval));}
         | '-' cte {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
-
-		  String lexema = negarConstante($2.sval);}
+                   		TablaSimbolos.agregarAtributo(ptr_id, "uso", "constante");
+                   		TablaSimbolos.agregarAtributo(ptr_id, "tipo", TablaSimbolos.getTipo($2.sval));
+                   		String lexema = negarConstante($2.sval);}
 ;
 
 impresion: PRINT  cadena { String nombre = STRING_CHAR + "cadena" + String.valueOf(contador_cadenas);
@@ -304,13 +318,24 @@ parametro_real: expresion {}
 ;
 
 // TODO agregar ejecucion al cuerpo?
-declaracion_clase: CLASS ID '{' declaraciones '}' {}
-				 | CLASS ID ','
-				 | CLASS ID '{' '}' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una declaracion dentro de las llaves");}
+declaracion_clase: header_clase '{' declaraciones '}' {  tipo = TablaTipos.CLASS_TYPE;
+						int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
+						TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");
+						TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");}
+
+				 | header_clase ','
+				 | header_clase '{' '}' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una declaracion dentro de las llaves");}
 				 | CLASS '{' '}' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una ID previo a las llaves");}
 ;
 
-declaracion_impl: IMPL FOR ID ':' '{' funciones_impl '}' {agregarEstructura(estructuras_sintacticas, "Sentencia de IMPL");}
+header_clase: CLASS ID {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");}
+;
+
+declaracion_impl: header_impl ID ':' '{' funciones_impl '}'
+;
+
+header_impl: IMPL FOR {agregarEstructura(estructuras_sintacticas, "Sentencia de IMPL");}
+
 ;
 
 funciones_impl: funciones_impl funcion

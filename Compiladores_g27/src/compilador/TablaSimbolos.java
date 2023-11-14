@@ -90,6 +90,15 @@ public class TablaSimbolos {
         }
     }
 
+    public static String getTipo(String valor){
+        if (valor.contains("_ui")){
+            return TablaTipos.UINT_TYPE;
+        } else if (valor.contains("_s")) {
+            return TablaTipos.SHORT_TYPE;
+        }
+        return TablaTipos.DOUBLE_TYPE;
+    }
+
     //obtengo un atributo de un simbolo, dado su clave y un string 'atributo', si es que pertenece al mapa
     public static String obtenerAtributo(int clave, String atributo) {
         if (simbolos.containsKey(clave)) {

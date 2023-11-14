@@ -3,9 +3,11 @@
      UINT b,
      SHORT a,
      DOUBLE vv,
-     VOID m() {
+     VOID m(CLASS bb) {
+        j=3_ui,
         b = 5_s,
         vv = b,
       },
   }
+
 },

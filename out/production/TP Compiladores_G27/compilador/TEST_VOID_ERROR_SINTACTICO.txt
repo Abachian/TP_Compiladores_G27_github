@@ -1,5 +1,5 @@
 {prog
-VOID m(){
+VOID m(UINT x){
 
 },
 
