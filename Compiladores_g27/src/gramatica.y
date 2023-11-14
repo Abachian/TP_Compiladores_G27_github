@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.HashMap;
+import compilador.Terceto;
+
 %}
 
 //declaracion de tokens a recibir del Analizador Lexico
@@ -259,27 +262,38 @@ comparador: comp_distinto
         | '>'
 ;
 
-asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion"); }
-			| ID SUMA '(' expresion ')'{agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
-			| ID '=' expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
-			| ID SUMA expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");}
+asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
+									  int aux = generarTerceto($2.sval,$1.sval,$4.sval);
+						}
+			| ID SUMA '(' expresion ')'{agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
+										int aux = generarTerceto("+",$1.sval,$4.sval);
+										int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
+			}
+			| ID '=' expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
+								int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
+
+			| ID SUMA expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
+								 primeraExpresion = true;
+								 int aux = generarTerceto("+",$1.sval,$3.sval);
+                        		 int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
+			}
 			| ID SUMA {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 			| '=' expresion {agregarError(errores_sintacticos, Parser.ERROR, "Se espera un identificador en el lado izquierdo de la asignacion");}
             | ID '='  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 ;
 
-expresion: expresion '+' termino_positivo
-        | expresion '-' termino_positivo
+expresion: expresion '+' termino_positivo  {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
+        | expresion '-' termino_positivo {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
         | termino
 ;
 
-termino: termino '*' factor
-        | termino '/' factor
+termino: termino '*' factor {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
+        | termino '/' factor {int aux = generarTerceto("/",$1.sval,$3.sval);}
 		| factor
 ;
 
-termino_positivo: termino_positivo '*' factor
-            | termino_positivo '/' factor
+termino_positivo: termino_positivo '*' factor {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
+            | termino_positivo '/' factor {int aux = generarTerceto("/",$1.sval,$3.sval);}
             | factor_positivo
 ;
 
@@ -355,10 +369,12 @@ public static final List<String> errores_lexicos = new ArrayList<>();
 public static final List<String> errores_sintacticos = new ArrayList<>();
 public static final List<String> errores_semanticos = new ArrayList<>();
 public static final List<String> estructuras_sintacticas = new ArrayList<>();
+public static final HashMap<Integer,Terceto> codigoIntermedio = new HashMap<Integer,Terceto>();
 
 
 private static boolean errores_compilacion;
 private static String tipo;
+private int punteroTerceto = 1;
 
 private static int contador_cadenas = 0;
 public static final String STRING_CHAR = "‘";
@@ -484,6 +500,18 @@ public static void imprimirEstructuras(List<String> estructuras, String cabecera
 		}
 }
 
+//--TERCETOS--//
+public int generarTerceto(String op1, String op2, String op3){
+	Terceto t = new Terceto(op1, op2, op3);
+	codigoIntermedio.put(punteroTerceto,t);
+	punteroTerceto = punteroTerceto + 1;
+	t.print();
+	return punteroTerceto -1;
+}
+
+
+
+
 public static void main(String[] args) {
 
 	 	Scanner scanner = new Scanner(System.in);
@@ -507,3 +535,6 @@ public static void main(String[] args) {
                 Parser.imprimirEstructuras(estructuras_sintacticas, "Estructuras");
 
         }
+
+
+

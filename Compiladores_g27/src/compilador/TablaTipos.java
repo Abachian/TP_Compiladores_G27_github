@@ -14,11 +14,7 @@ public class TablaTipos {
     public static final String CLASS_TYPE = "CLASS";
     public static final String VOID_TYPE = "VOID";
     public static final String STRING_TYPE = "string";
-
     public static final String ERROR_TYPE = "error";
-
-
-
 
     public static String getTipo(String op) {
         int puntOp = TablaSimbolos.obtenerSimbolo(op);
