@@ -46,7 +46,6 @@ public class AnalizadorLexico {
 
 
 
-
     private static final String ARCHIVO_MATRIZ_ESTADOS = userDir + "\\Compiladores_g27\\src\\matriz_de_Transicion_de_Estados.txt";
     private static final String ARCHIVO_MATRIZ_ACCIONES = userDir + "\\Compiladores_g27\\src\\matrizAccionesSemanticas.txt";
     private static final AccionSemantica[][]  acciones_semanticas  = FileHelper.readActionMatrixFile(ARCHIVO_MATRIZ_ACCIONES, CANTIDAD_ESTADOS, CANTIDAD_CARACTERES);

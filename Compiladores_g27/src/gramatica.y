@@ -273,7 +273,6 @@ asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas,
 								int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
 
 			| ID SUMA expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
-								 primeraExpresion = true;
 								 int aux = generarTerceto("+",$1.sval,$3.sval);
                         		 int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
 			}
@@ -282,18 +281,19 @@ asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas,
             | ID '='  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 ;
 
-expresion: expresion '+' termino_positivo  {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
-        | expresion '-' termino_positivo {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
+expresion: expresion '+' termino_positivo  {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";
+                                            }
+        | expresion '-' termino_positivo {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
         | termino
 ;
 
-termino: termino '*' factor {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
-        | termino '/' factor {int aux = generarTerceto("/",$1.sval,$3.sval);}
+termino: termino '*' factor { $$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
+        | termino '/' factor {$$.sval = "[" + Integer.toString(generarTerceto("/",$$.sval,$3.sval))+ "]";}
 		| factor
 ;
 
-termino_positivo: termino_positivo '*' factor {int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
-            | termino_positivo '/' factor {int aux = generarTerceto("/",$1.sval,$3.sval);}
+termino_positivo: termino_positivo '*' factor {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";  }
+            | termino_positivo '/' factor {$$.sval = "[" + Integer.toString(generarTerceto("/",$$.sval,$3.sval))+ "]";}
             | factor_positivo
 ;
 
