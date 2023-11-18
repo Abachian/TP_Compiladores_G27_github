@@ -1,4 +1,6 @@
  { prog
   SHORT ca,
-  ta = 1_ui - 4_ui + 5_ui * 7_ui * 8_ui + 3_ui,
+  ta = a - b,
+  dr = ta,
+  dr = 1_ui + 5_ui + 9_ui,
 },

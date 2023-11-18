@@ -208,21 +208,50 @@ else_seleccion_do: ELSE bloque_sentencias_do ;
 				| ELSE ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
 ;
  
-seleccion: header_if condicion_salto_if '{' if_seleccion '}' END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
-		| header_if condicion_salto_if  if_seleccion  END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }
-        | header_if condicion_salto_if '{' if_seleccion '}' else_seleccion END_IF
+seleccion: header_if condicion_salto_if '{' if_seleccion '}' END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
+																	{$$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }}
+		| header_if condicion_salto_if '{' if_seleccion '}' else_seleccion END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
+											   $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
+		| header_if condicion_salto_if  if_seleccion END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }
         | header_if condicion_salto_if if_seleccion begin ejecucion end ',' END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
         | header_if condicion_salto_if END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias luego del Then"); }
         | header_if condicion_salto_if if_seleccion ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
 ;
 
-
-
-if_seleccion: ejecucion
-		| ejecucion RETURN '(' expresion ')' ','
-		| RETURN '(' expresion ')' ','
+if_seleccion: ejecucion {  int i = codigoIntermedio.size();
+			   boolean encontrado = false;
+			   while (!encontrado && i > 0 ){
+			     if (codigoIntermedio.get(i).getOp3().equals("incompleto")) {
+			       Terceto t = codigoIntermedio.get(i);
+			       t.setOp3(Integer.toString(punteroTerceto+1));
+			       encontrado = true;
+			     }
+			     i = i-1;
+			   }
+                           }
+		| ejecucion RETURN '(' expresion ')' ',' {  int i = codigoIntermedio.size();
+                                                         			   boolean encontrado = false;
+                                                         			   while (!encontrado && i > 0 ){
+                                                         			     if (codigoIntermedio.get(i).getOp3().equals("incompleto")) {
+                                                         			       Terceto t = codigoIntermedio.get(i);
+                                                         			       t.setOp3(Integer.toString(punteroTerceto+1));
+                                                         			       encontrado = true;
+                                                         			     }
+                                                         			     i = i-1;
+                                                         			   }
+                                                                                    }
+		| RETURN '(' expresion ')' ',' {  int i = codigoIntermedio.size();
+                                               			   boolean encontrado = false;
+                                               			   while (!encontrado && i > 0 ){
+                                               			     if (codigoIntermedio.get(i).getOp3().equals("incompleto")) {
+                                               			       Terceto t = codigoIntermedio.get(i);
+                                               			       t.setOp3(Integer.toString(punteroTerceto+1));
+                                               			       encontrado = true;
+                                               			     }
+                                               			     i = i-1;
+                                               			   }
+                                                                          }
 		| '(' expresion ')' ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera la palabra reservada RETURN");}
-		  //TODO capaz hay que quitarlo
 		| RETURN ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera expresión de retorno");}
 		| ',' { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias luego de la condicion");}
 		| ejecucion ',' { agregarError(errores_sintacticos, Parser.ERROR, "No se espera ',' "); }
@@ -230,26 +259,59 @@ if_seleccion: ejecucion
 
 //TODO agregar error se espera cuerpo dentro llaves else
 
-else_seleccion: ELSE '{' ejecucion '}'
-		| ELSE ejecucion RETURN '(' expresion ')'
-        | ELSE RETURN '(' expresion ')'
-        | ELSE '(' expresion ')'  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera la palabra reservada RETURN");}
-        | ELSE RETURN  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera expresión de retorno");}
-		| ELSE  {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
+else_seleccion: caso_else '{' ejecucion '}' {int i = codigoIntermedio.size();
+					     boolean encontrado = false;
+					     while (!encontrado && i > 0 ){
+					     	if (codigoIntermedio.get(i).getOp2().equals("incompleto")) {
+						       Terceto t = codigoIntermedio.get(i);
+						       t.setOp2(Integer.toString(punteroTerceto));
+						       encontrado = true;
+					     	}
+					     	i = i-1;
+					     }
+					}
+
+		| caso_else ejecucion RETURN '(' expresion ')'{int i = codigoIntermedio.size();
+                                                               					     boolean encontrado = false;
+                                                               					     while (!encontrado && i > 0 ){
+                                                               					     	if (codigoIntermedio.get(i).getOp2().equals("incompleto")) {
+                                                               						       Terceto t = codigoIntermedio.get(i);
+                                                               						       t.setOp2(Integer.toString(punteroTerceto));
+                                                               						       encontrado = true;
+                                                               					     	}
+                                                               					     	i = i-1;
+                                                               					     }}
+        | caso_else RETURN '(' expresion ')'{int i = codigoIntermedio.size();
+                                             					     boolean encontrado = false;
+                                             					     while (!encontrado && i > 0 ){
+                                             					     	if (codigoIntermedio.get(i).getOp2().equals("incompleto")) {
+                                             						       Terceto t = codigoIntermedio.get(i);
+                                             						       t.setOp2(Integer.toString(punteroTerceto));
+                                             						       encontrado = true;
+                                             					     	}
+                                             					     	i = i-1;
+                                             					     }}
+        | caso_else '(' expresion ')'  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera la palabra reservada RETURN");}
+        | caso_else RETURN  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera expresión de retorno");}
+		| caso_else  {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
+;
+
+caso_else: ELSE {$$.sval = "[" + Integer.toString(generarTerceto("BI","incompleto","-"))+ "]";  }
 ;
 
 
-condicion_salto_if: '(' condicion ')'
+condicion_salto_if: '(' condicion ')' {$$.sval = "[" + Integer.toString(generarTerceto("BF",$2.sval,"incompleto"))+ "]";  }
 		| condicion ')'{ agregarError(errores_sintacticos, Parser.ERROR, "Se espera '(' al principio de la condicion");}
 		| '(' ')'      { agregarError(errores_sintacticos, Parser.ERROR, "Se espera una condicion");}
 ;
 
 
 condicion: expresion_bool
-        | condicion comparador expresion_bool
+        | condicion comparador expresion_bool {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
 ;
 
-expresion_bool: expresion comparador expresion
+expresion_bool: expresion comparador expresion {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$1.sval,$3.sval))+ "]";}
+
 		| expresion comparador {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion luego del comparador");}
         | comparador expresion {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion antes del comparador");}
 ;
@@ -263,25 +325,16 @@ comparador: comp_distinto
 ;
 
 asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
-									  primeraExpresion = true;
 									  int aux = generarTerceto($2.sval,$1.sval,$4.sval);
 						}
 			| ID SUMA '(' expresion ')'{agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
-										primeraExpresion = true;
 										int aux = generarTerceto("+",$1.sval,$4.sval);
 										int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
 			}
 			| ID '=' expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
-								primeraExpresion = true;
-								if (expresionCompuesta) {
-								int aux = generarTerceto($2.sval,$1.sval,"[" + (Integer.toString(punteroTerceto -1)) + "]");
-								}
-								else{
 								int aux = generarTerceto($2.sval,$1.sval,$3.sval);}
-								}
 
 			| ID SUMA expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
-								 primeraExpresion = true;
 								 int aux = generarTerceto("+",$1.sval,$3.sval);
                         		 int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
 			}
@@ -290,19 +343,20 @@ asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas,
             | ID '='  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 ;
 
-expresion: expresion '+' termino_positivo  { if (primeraExpresion) {int aux = generarTerceto($2.sval,$1.sval,$3.sval); primeraExpresion = false;} else{int aux = generarTerceto($2.sval,"[" + (Integer.toString(punteroTerceto -1) + "]"),$3.sval); {expresionCompuesta = true;}} }
-        | expresion '-' termino_positivo {int aux = generarTerceto($2.sval,$1.sval,$3.sval); {expresionCompuesta = true;}}
-        | termino {expresionCompuesta = false;}
+expresion: expresion '+' termino_positivo  {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";
+                                            }
+        | expresion '-' termino_positivo {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
+        | termino
 ;
 
-termino: termino '*' factor {int aux = generarTerceto($2.sval,$1.sval,$3.sval); {expresionCompuesta = true;}}
-        | termino '/' factor {int aux = generarTerceto("/",$1.sval,$3.sval); {expresionCompuesta = true;}}
-		| factor {expresionCompuesta = false;}
+termino: termino '*' factor { $$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
+        | termino '/' factor {$$.sval = "[" + Integer.toString(generarTerceto("/",$$.sval,$3.sval))+ "]";}
+		| factor
 ;
 
-termino_positivo: termino_positivo '*' factor {int aux = generarTerceto($2.sval,$1.sval,$3.sval); {expresionCompuesta = true;}}
-            | termino_positivo '/' factor {int aux = generarTerceto("/",$1.sval,$3.sval); {expresionCompuesta = true;}}
-            | factor_positivo {expresionCompuesta = false;}
+termino_positivo: termino_positivo '*' factor {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";  }
+            | termino_positivo '/' factor {$$.sval = "[" + Integer.toString(generarTerceto("/",$$.sval,$3.sval))+ "]";}
+            | factor_positivo
 ;
 
 factor: ID
@@ -378,12 +432,10 @@ public static final List<String> errores_sintacticos = new ArrayList<>();
 public static final List<String> errores_semanticos = new ArrayList<>();
 public static final List<String> estructuras_sintacticas = new ArrayList<>();
 public static final HashMap<Integer,Terceto> codigoIntermedio = new HashMap<Integer,Terceto>();
-
+public static final Stack pila = new Stack();
 
 private static boolean errores_compilacion;
 private static String tipo;
-private boolean primeraExpresion = true;
-private boolean expresionCompuesta = true;
 private int punteroTerceto = 1;
 
 private static int contador_cadenas = 0;
@@ -515,13 +567,23 @@ public int generarTerceto(String op1, String op2, String op3){
 	Terceto t = new Terceto(op1, op2, op3);
 	codigoIntermedio.put(punteroTerceto,t);
 	punteroTerceto = punteroTerceto + 1;
-	t.print();
 	return punteroTerceto -1;
 }
 
+public static void imprimirTercetos() {
+  // Imprimo la lista de Tercetos
+  if (!codigoIntermedio.isEmpty()) {
+    System.out.println();
+    int nroTerceto = 1;
 
+    for (Terceto terceto : codigoIntermedio.values()) {
+      System.out.print("Terceto " + nroTerceto + ": ");
+      terceto.print();
+      nroTerceto = nroTerceto + 1;
+    }
+  }
 
-
+}
 public static void main(String[] args) {
 
 	 	Scanner scanner = new Scanner(System.in);
@@ -539,6 +601,7 @@ public static void main(String[] args) {
                         excepcion.printStackTrace();
                 }
 
+				Parser.imprimirTercetos();
 				TablaSimbolos.imprimirTabla();
                 Parser.imprimirErrores(errores_lexicos, "Errores Lexicos");
                 Parser.imprimirErrores(errores_sintacticos, "Errores Sintacticos");
