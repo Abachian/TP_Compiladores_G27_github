@@ -164,11 +164,25 @@ referencia_clase: ID '.' ID '=' ID
 		| ID '.' ID '(' list_de_parametros ')'
 ;
 
-DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')'
+DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')' {int i = codigoIntermedio.size();
+                                                            boolean encontrado = false;
+                                                            while (!encontrado && i > 0 )
+                                                            {
+                                                              if (codigoIntermedio.get(i).getOp1().equals("DO"))
+                                                              {
+
+                                                                  $$.sval = "[" + Integer.toString(generarTerceto("UNTIL",Integer.toString(i + 1) ,Integer.toString(punteroTerceto + 1))) + "]";
+                                                                  encontrado = true;
+                                                               }
+                                                              i = i-1;
+                                                            }
+                                                            }
+
 		| pdo UNTIL '(' condicion ')' { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias entre DO y UNTIL"); }
 ;
 
-pdo: DO {agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
+pdo: DO {$$.sval = "[" + Integer.toString(generarTerceto("DO","-","-"))+ "]";
+         agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
 ;
 
 bloque_sentencias_do: '{' sentencia_ejecutable_do RETURN '(' expresion ')' ',' '}'
@@ -182,7 +196,7 @@ sentencia_ejecutable_do: sentencia_do
                         | sentencia_ejecutable_do sentencia_do
 ;
 
-sentencia_do:    DO_UNTIL ';'
+sentencia_do:    DO_UNTIL ','
 				| DO_UNTIL { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
                 | impresion ','
                 | impresion { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
@@ -192,8 +206,10 @@ sentencia_do:    DO_UNTIL ';'
 
 ;
 
-seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF
-        | header_if condicion_salto_if if_seleccion_do else_seleccion_do END_IF
+seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
+                                                                      $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
+        | header_if condicion_salto_if if_seleccion_do else_seleccion_do END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
+                                                                                 $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
         | header_if condicion_salto_if if_seleccion_do bloque_sentencias_do END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
         | header_if condicion_salto_if if_seleccion_do ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
 ;
@@ -201,15 +217,35 @@ seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF
 header_if: IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
 ;
 
-if_seleccion_do: bloque_sentencias_do
+if_seleccion_do: bloque_sentencias_do {int i = codigoIntermedio.size();
+                                       			   boolean encontrado = false;
+                                       			   while (!encontrado && i > 0 ){
+                                       			     if (codigoIntermedio.get(i).getOp3().equals("incompleto")) {
+                                       			       Terceto t = codigoIntermedio.get(i);
+                                       			       t.setOp3(Integer.toString(punteroTerceto+1));
+                                       			       encontrado = true;
+                                       			     }
+                                       			     i = i-1;
+                                       			   }
+                                       }
  ;
 
-else_seleccion_do: ELSE bloque_sentencias_do ;
-				| ELSE ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
+else_seleccion_do: caso_else bloque_sentencias_do {int i = codigoIntermedio.size();
+                                                   					     boolean encontrado = false;
+                                                   					     while (!encontrado && i > 0 ){
+                                                   					     	if (codigoIntermedio.get(i).getOp2().equals("incompleto")) {
+                                                   						       Terceto t = codigoIntermedio.get(i);
+                                                   						       t.setOp2(Integer.toString(punteroTerceto));
+                                                   						       encontrado = true;
+                                                   					     	}
+                                                   					     	i = i-1;
+                                                   					     }
+                                                   					    }
+				| caso_else ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
 ;
  
 seleccion: header_if condicion_salto_if '{' if_seleccion '}' END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
-																	{$$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }}
+																	$$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 		| header_if condicion_salto_if '{' if_seleccion '}' else_seleccion END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
 											   $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 		| header_if condicion_salto_if  if_seleccion END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }

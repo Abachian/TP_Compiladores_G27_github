@@ -1,11 +1,6 @@
 { prog
 IF ( aw + 4_s > c + 1_s) {
-IF ( aw + 4_s > c + 1_s) {
 
-   RETURN (4_s + 5_ui),
-}
-ELSE { s = 7_s, }
-END_IF,
    RETURN (4_s + 5_ui),
 }
 ELSE { s = 7_s, }
