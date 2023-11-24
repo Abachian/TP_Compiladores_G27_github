@@ -31,6 +31,17 @@ public class AnalizadorLexico {
     public static final int UNSIGNED_MAX_INT_VALUE = (int) Math.pow(2, 16) - 1;
 
 
+    /* VALORES FRONTERA DOUBLE
+
+        Considerar el rango 2.2250738585072014D-308 < x < 1.7976931348623157D+308
+        -1.7976931348623157D+308 < x < -2.2250738585072014D-308 0.0
+     */
+    public static final String POSITIVE_DOUBLE_NEGATIVE_D = "2.2250738585072014D-308";
+    public static final String POSITIVE_DOUBLE_POSITIVE_D = "1.7976931348623157D+308";
+    public static final String NEGATIVE_DOUBLE_POSITIVE_D = "-1.7976931348623157D+308";
+    public static final String NEGATIVE_DOUBLE_NEGATIVE_D = "-2.2250738585072014D-308";
+
+
 
     public static final double MIN_DOUBLE_VALUE = 2.2250738585072014D-308;
 
@@ -70,7 +81,7 @@ public class AnalizadorLexico {
      * @param caracter
      * @return el caracter colapsado en caso de ser un digito, minuscula o mayuscula diferente a "D"
      */
-    private static char obtenerTipoCaracter(char caracter) {
+    public static char obtenerTipoCaracter(char caracter) {
         if (Character.isDigit(caracter)) {
             return DIGITO;} else if (caracter != 'd' && caracter != 's' && caracter != 'u' && caracter != 'i' && Character.isLowerCase(caracter)) {
             return MINUSCULA;

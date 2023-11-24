@@ -1,3 +1,5 @@
  { prog
-	db.d = tt,
+    DOUBLE db,
+    db = 2.2D+7,
 },
+

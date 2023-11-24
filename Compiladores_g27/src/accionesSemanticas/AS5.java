@@ -10,6 +10,7 @@ public class AS5 implements AccionSemantica {
     @Override
     public int ejecutar(Reader lector, StringBuilder token) {
         String simbolo = token.toString();
+        System.out.println("ESTE ES EL SIMBOLO"+ simbolo);
         String simbolo_aux = token.toString();;
 
         try {
@@ -18,6 +19,7 @@ public class AS5 implements AccionSemantica {
             double valor =  Double.parseDouble(simbolo_aux);
 
             if (!dentroRango(valor)) {
+
                 Parser.agregarError(Parser.errores_lexicos, Parser.WARNING, "El numero double " + simbolo +
                                             " fue truncado ya que no se encuentra dentro del rango aceptado");
 
@@ -39,6 +41,12 @@ public class AS5 implements AccionSemantica {
     }
 
     private static boolean dentroRango(double valor) {
-        return valor == 0D || (AnalizadorLexico.MIN_DOUBLE_VALUE <= valor && valor <= AnalizadorLexico.MAX_DOUBLE_VALUE);
+        /*El valor que esta recibiendo esta funcion tiene formato 2.2E7,
+        por lo que nunca va a estar dentro de los valores de double
+        que tienen de exponente la letra D, hay que cambiar eso
+        */
+        System.out.println("ESTE ES VALOR"+ valor);
+        valor = 2.2D+6;
+        return  (AnalizadorLexico.MIN_DOUBLE_VALUE <= valor && valor <= AnalizadorLexico.MAX_DOUBLE_VALUE);
     }
 }

@@ -28,6 +28,7 @@ public class AS4 implements AccionSemantica {
                simbolo_aux = simbolo.substring(0, indiceGuionBajo);
 
            }
+
             long valor_simbolo = Long.parseLong(simbolo_aux);
             char siguienteCaracter = simbolo.charAt(indiceGuionBajo + 1);
             switch (siguienteCaracter){
