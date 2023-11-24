@@ -1,6 +1,3 @@
  { prog
-  SHORT ca,
-  ta = a - b,
-  dr = ta,
-  dr = 1_ui + 5_ui + 9_ui,
+	db.d = tt,
 },

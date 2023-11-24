@@ -10,7 +10,7 @@ public class AS5 implements AccionSemantica {
     @Override
     public int ejecutar(Reader lector, StringBuilder token) {
         String simbolo = token.toString();
-        String simbolo_aux = simbolo;
+        String simbolo_aux = token.toString();;
 
         try {
 

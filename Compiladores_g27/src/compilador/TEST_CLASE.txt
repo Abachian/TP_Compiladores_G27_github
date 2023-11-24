@@ -4,12 +4,11 @@
      SHORT a,
      DOUBLE vv,
      VOID m(CLASS bb) {
+        UINT x,
         j=3_ui,
         b = 5_s,
-        vv = b,
+        vv = 3.2250738585072014D-308,
       },
   }
 
 },
-(CLASS,cc,29) ??
-(b,-,-)

@@ -39,13 +39,13 @@ header_program: nombre_programa { Parser.declarando = true; tipo = TablaTipos.ST
                                                                                          TablaSimbolos.agregarAtributo(ptr_id, "uso", "Nombre del programa");}
 ;
 
-begin: '{'
+begin: '{' {cambiarAmbito(":START");}
 ;
 
 end: '}'
 ;
 
-nombre_programa: ID
+nombre_programa: ID {cambiarAmbito($1.sval);}
 ;
 
 cuerpo_prog: declaraciones ejecucion
@@ -91,7 +91,7 @@ declaracion_funcion: funcion
               	    | declaracion_impl
 ;
 
-funcion: header_funcion '(' list_de_parametros ')' '{' cuerpo_de_la_funcion '}' ','
+funcion: header_funcion '(' list_de_parametros ')' '{' cuerpo_de_la_funcion '}' ',' {salirAmbito();}
 		|  header_funcion '(' list_de_parametros ')' '{' '}' ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el cuerpo de la funcion");}
 ;
 
@@ -99,10 +99,13 @@ funcion_sin_definir: header_funcion '(' list_de_parametros ')' ','
 ;
 
 
-header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
 			TablaSimbolos.agregarAtributo(ptr_id, "tipo", "VOID_TYPE");
                     	TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de metodo");
-                    	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");}
+                    	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");
+                    	TablaSimbolos.agregarSimbolo("@ret@" + $2.sval + Parser.ambito.toString());
+                        int ptr_ret = TablaSimbolos.obtenerSimbolo("@ret@" + $2.sval + Parser.ambito.toString());
+                        cambiarAmbito($2.sval);}
             | VOID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera nombre de la funcion");}
 ;
 
@@ -158,9 +161,9 @@ sentencia_ejecutable: asignacion ','
 
 ;
 
-referencia_clase: ID '.' ID '=' ID
-		| ID '.' ID '=' ID '.' ID
-		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')'
+referencia_clase: ID '.' ID '=' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval);}
+		| ID '.' ID '=' ID '.' ID {int aux = generarTerceto($4.sval,$3.sval,$7.sval);}
+		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')' {int aux = generarTerceto("=",$3.sval,$5.sval);}
 		| ID '.' ID '(' list_de_parametros ')'
 ;
 
@@ -440,7 +443,10 @@ declaracion_clase: header_clase '{' declaraciones '}' {  tipo = TablaTipos.CLASS
 				 | CLASS '{' '}' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una ID previo a las llaves");}
 ;
 
-header_clase: CLASS ID {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");}
+header_clase: CLASS ID {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");
+                        int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
+                        TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");
+                        TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");}
 ;
 
 declaracion_impl: header_impl ID ':' '{' funciones_impl '}'
@@ -506,7 +512,6 @@ int yylex() {
                         e.printStackTrace();
                 }
         }
-	AnalizadorLexico.imprimirTokensDetectados();
 return identificador_token;
 }
 
@@ -620,6 +625,26 @@ public static void imprimirTercetos() {
   }
 
 }
+
+private static void cambiarAmbito(String nuevo_ambito) {
+        //recibe el ID de una funcion, y lo concantenac con ambito
+        ambito.append(NAME_MANGLING_CHAR).append(nuevo_ambito);
+}
+
+private static void salirAmbito() {
+        //la funcion salirAmbito modifica el atributo ambito, quitandole todos los caracteres hasta el ':'
+        int index = ambito.lastIndexOf(NAME_MANGLING_CHAR);
+        ambito.delete(index, ambito.length());
+}
+
+
+private static String nombreFuncion() {
+        // Ultimo name mangling char
+        int ultimo_nmc = ambito.lastIndexOf(NAME_MANGLING_CHAR);
+        String nombre_funcion = ambito.substring(ultimo_nmc + 1);
+        return nombre_funcion + ambito.substring(0, ultimo_nmc);
+}
+
 public static void main(String[] args) {
 
 	 	Scanner scanner = new Scanner(System.in);

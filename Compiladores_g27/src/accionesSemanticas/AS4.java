@@ -29,12 +29,28 @@ public class AS4 implements AccionSemantica {
 
            }
             long valor_simbolo = Long.parseLong(simbolo_aux);
-
-            if (valor_simbolo > AnalizadorLexico.MAX_INT_VALUE) {
-                Parser.agregarError(Parser.errores_lexicos, Parser.WARNING, "El numero largo " + simbolo_aux +
-                                            " fue truncado al valor maximo, ya que supera a este mismo");
-                simbolo = Double.toString(AnalizadorLexico.MAX_INT_VALUE);
+            char siguienteCaracter = simbolo.charAt(indiceGuionBajo + 1);
+            switch (siguienteCaracter){
+                case 'u' :
+                    if (valor_simbolo > AnalizadorLexico.UNSIGNED_MAX_INT_VALUE) {
+                        Parser.agregarError(Parser.errores_lexicos, Parser.WARNING, "El numero largo " + simbolo_aux +
+                                " fue truncado al valor maximo, ya que supera a este mismo");
+                        simbolo = Double.toString(AnalizadorLexico.UNSIGNED_MAX_INT_VALUE);
+                    }
+                    break;
+                case 's' :
+                    if (valor_simbolo > AnalizadorLexico.MAX_INT_VALUE) {
+                        Parser.agregarError(Parser.errores_lexicos, Parser.WARNING, "El numero largo " + simbolo_aux +
+                                " fue truncado al valor maximo, ya que supera a este mismo");
+                        simbolo = Double.toString(AnalizadorLexico.MAX_INT_VALUE);
+                    }else if (valor_simbolo < AnalizadorLexico.MIN_INT_VALUE){
+                        Parser.agregarError(Parser.errores_lexicos, Parser.WARNING, "El numero largo " + simbolo_aux +
+                                " fue truncado al valor minimo, ya que no supera a este mismo");
+                        simbolo = Double.toString(AnalizadorLexico.MIN_INT_VALUE);
+                    }
+                    break;
             }
+
         } catch (NumberFormatException excepcion) {
             excepcion.printStackTrace();
         }

@@ -39,13 +39,13 @@ header_program: nombre_programa { Parser.declarando = true; tipo = TablaTipos.ST
                                                                                          TablaSimbolos.agregarAtributo(ptr_id, "uso", "Nombre del programa");}
 ;
 
-begin: '{'
+begin: '{' {cambiarAmbito(":START");}
 ;
 
 end: '}'
 ;
 
-nombre_programa: ID
+nombre_programa: ID {cambiarAmbito($1.sval);}
 ;
 
 cuerpo_prog: declaraciones ejecucion
@@ -91,7 +91,7 @@ declaracion_funcion: funcion
               	    | declaracion_impl
 ;
 
-funcion: header_funcion '(' list_de_parametros ')' '{' cuerpo_de_la_funcion '}' ','
+funcion: header_funcion '(' list_de_parametros ')' '{' cuerpo_de_la_funcion '}' ',' {salirAmbito();}
 		|  header_funcion '(' list_de_parametros ')' '{' '}' ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el cuerpo de la funcion");}
 ;
 
@@ -99,10 +99,13 @@ funcion_sin_definir: header_funcion '(' list_de_parametros ')' ','
 ;
 
 
-header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
 			TablaSimbolos.agregarAtributo(ptr_id, "tipo", "VOID_TYPE");
                     	TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de metodo");
-                    	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");}
+                    	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");
+                    	TablaSimbolos.agregarSimbolo("@ret@" + $2.sval + Parser.ambito.toString());
+                        int ptr_ret = TablaSimbolos.obtenerSimbolo("@ret@" + $2.sval + Parser.ambito.toString());
+                        cambiarAmbito($2.sval);}
             | VOID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera nombre de la funcion");}
 ;
 
@@ -158,17 +161,31 @@ sentencia_ejecutable: asignacion ','
 
 ;
 
-referencia_clase: ID '.' ID '=' ID
-		| ID '.' ID '=' ID '.' ID
-		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')'
+referencia_clase: ID '.' ID '=' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval);}
+		| ID '.' ID '=' ID '.' ID {int aux = generarTerceto($4.sval,$3.sval,$7.sval);}
+		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')' {int aux = generarTerceto("=",$3.sval,$5.sval);}
 		| ID '.' ID '(' list_de_parametros ')'
 ;
 
-DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')'
+DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')' {int i = codigoIntermedio.size();
+                                                            boolean encontrado = false;
+                                                            while (!encontrado && i > 0 )
+                                                            {
+                                                              if (codigoIntermedio.get(i).getOp1().equals("DO"))
+                                                              {
+
+                                                                  $$.sval = "[" + Integer.toString(generarTerceto("UNTIL",Integer.toString(i + 1) ,Integer.toString(punteroTerceto + 1))) + "]";
+                                                                  encontrado = true;
+                                                               }
+                                                              i = i-1;
+                                                            }
+                                                            }
+
 		| pdo UNTIL '(' condicion ')' { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias entre DO y UNTIL"); }
 ;
 
-pdo: DO {agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
+pdo: DO {$$.sval = "[" + Integer.toString(generarTerceto("DO","-","-"))+ "]";
+         agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
 ;
 
 bloque_sentencias_do: '{' sentencia_ejecutable_do RETURN '(' expresion ')' ',' '}'
@@ -182,7 +199,7 @@ sentencia_ejecutable_do: sentencia_do
                         | sentencia_ejecutable_do sentencia_do
 ;
 
-sentencia_do:    DO_UNTIL ';'
+sentencia_do:    DO_UNTIL ','
 				| DO_UNTIL { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
                 | impresion ','
                 | impresion { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
@@ -192,8 +209,10 @@ sentencia_do:    DO_UNTIL ';'
 
 ;
 
-seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF
-        | header_if condicion_salto_if if_seleccion_do else_seleccion_do END_IF
+seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
+                                                                      $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
+        | header_if condicion_salto_if if_seleccion_do else_seleccion_do END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
+                                                                                 $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
         | header_if condicion_salto_if if_seleccion_do bloque_sentencias_do END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
         | header_if condicion_salto_if if_seleccion_do ELSE END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
 ;
@@ -201,15 +220,35 @@ seleccion_en_do: header_if condicion_salto_if if_seleccion_do END_IF
 header_if: IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
 ;
 
-if_seleccion_do: bloque_sentencias_do
+if_seleccion_do: bloque_sentencias_do {int i = codigoIntermedio.size();
+                                       			   boolean encontrado = false;
+                                       			   while (!encontrado && i > 0 ){
+                                       			     if (codigoIntermedio.get(i).getOp3().equals("incompleto")) {
+                                       			       Terceto t = codigoIntermedio.get(i);
+                                       			       t.setOp3(Integer.toString(punteroTerceto+1));
+                                       			       encontrado = true;
+                                       			     }
+                                       			     i = i-1;
+                                       			   }
+                                       }
  ;
 
-else_seleccion_do: ELSE bloque_sentencias_do ;
-				| ELSE ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
+else_seleccion_do: caso_else bloque_sentencias_do {int i = codigoIntermedio.size();
+                                                   					     boolean encontrado = false;
+                                                   					     while (!encontrado && i > 0 ){
+                                                   					     	if (codigoIntermedio.get(i).getOp2().equals("incompleto")) {
+                                                   						       Terceto t = codigoIntermedio.get(i);
+                                                   						       t.setOp2(Integer.toString(punteroTerceto));
+                                                   						       encontrado = true;
+                                                   					     	}
+                                                   					     	i = i-1;
+                                                   					     }
+                                                   					    }
+				| caso_else ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
 ;
  
 seleccion: header_if condicion_salto_if '{' if_seleccion '}' END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
-																	{$$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }}
+																	$$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 		| header_if condicion_salto_if '{' if_seleccion '}' else_seleccion END_IF {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
 											   $$.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 		| header_if condicion_salto_if  if_seleccion END_IF { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }
@@ -404,7 +443,10 @@ declaracion_clase: header_clase '{' declaraciones '}' {  tipo = TablaTipos.CLASS
 				 | CLASS '{' '}' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una ID previo a las llaves");}
 ;
 
-header_clase: CLASS ID {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");}
+header_clase: CLASS ID {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");
+                        int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
+                        TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");
+                        TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");}
 ;
 
 declaracion_impl: header_impl ID ':' '{' funciones_impl '}'
@@ -470,7 +512,6 @@ int yylex() {
                         e.printStackTrace();
                 }
         }
-	AnalizadorLexico.imprimirTokensDetectados();
 return identificador_token;
 }
 
@@ -584,6 +625,26 @@ public static void imprimirTercetos() {
   }
 
 }
+
+private static void cambiarAmbito(String nuevo_ambito) {
+        //recibe el ID de una funcion, y lo concantenac con ambito
+        ambito.append(NAME_MANGLING_CHAR).append(nuevo_ambito);
+}
+
+private static void salirAmbito() {
+        //la funcion salirAmbito modifica el atributo ambito, quitandole todos los caracteres hasta el ':'
+        int index = ambito.lastIndexOf(NAME_MANGLING_CHAR);
+        ambito.delete(index, ambito.length());
+}
+
+
+private static String nombreFuncion() {
+        // Ultimo name mangling char
+        int ultimo_nmc = ambito.lastIndexOf(NAME_MANGLING_CHAR);
+        String nombre_funcion = ambito.substring(ultimo_nmc + 1);
+        return nombre_funcion + ambito.substring(0, ultimo_nmc);
+}
+
 public static void main(String[] args) {
 
 	 	Scanner scanner = new Scanner(System.in);
