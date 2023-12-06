@@ -10,13 +10,13 @@ public class AS5 implements AccionSemantica {
     @Override
     public int ejecutar(Reader lector, StringBuilder token) {
         String simbolo = token.toString();
-        System.out.println("ESTE ES EL SIMBOLO"+ simbolo);
+        //System.out.println("ESTE ES EL SIMBOLO"+ simbolo);
         String simbolo_aux = token.toString();;
 
         try {
 
             simbolo_aux = simbolo.replace('d', 'e').replace('D', 'E');
-            double valor =  Double.parseDouble(simbolo_aux);
+            double valor =  Double.valueOf(simbolo_aux);
 
             if (!dentroRango(valor)) {
 
@@ -41,12 +41,29 @@ public class AS5 implements AccionSemantica {
     }
 
     private static boolean dentroRango(double valor) {
-        /*El valor que esta recibiendo esta funcion tiene formato 2.2E7,
-        por lo que nunca va a estar dentro de los valores de double
-        que tienen de exponente la letra D, hay que cambiar eso
-        */
-        System.out.println("ESTE ES VALOR"+ valor);
-        valor = 2.2D+6;
-        return  (AnalizadorLexico.MIN_DOUBLE_VALUE <= valor && valor <= AnalizadorLexico.MAX_DOUBLE_VALUE);
+
+        /*
+            Valores
+            2.2250738585072014D-308 < x < 1.7976931348623157D+308 UNION
+            -1.7976931348623157D+308 < x < -2.2250738585072014D-308 UNION 0.0
+
+         */
+
+        boolean firstRange = (valor < AnalizadorLexico.NEGATIVE_DOUBLE_POSITIVE_D && valor >
+                AnalizadorLexico.NEGATIVE_DOUBLE_NEGATIVE_D);
+        boolean secondRange = (valor > AnalizadorLexico.POSITIVE_DOUBLE_NEGATIVE_D &&
+                valor < AnalizadorLexico.POSITIVE_DOUBLE_POSITIVE_D);
+        boolean isZero = (valor == 0);
+
+        return (firstRange || secondRange || isZero);
+
+
+
+
+
+
+
     }
+
+
 }

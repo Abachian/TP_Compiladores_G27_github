@@ -1,5 +1,10 @@
- { prog
-    DOUBLE db,
-    db = 2.2D+7,
+{ VOID f() {
+            SHORT a,
+            DOUBLE b,
+            b =  -2.2250738585072017D-308 ,
+           },
 },
+
+
+
 

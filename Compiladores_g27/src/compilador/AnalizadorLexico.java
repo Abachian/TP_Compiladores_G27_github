@@ -36,10 +36,10 @@ public class AnalizadorLexico {
         Considerar el rango 2.2250738585072014D-308 < x < 1.7976931348623157D+308
         -1.7976931348623157D+308 < x < -2.2250738585072014D-308 0.0
      */
-    public static final String POSITIVE_DOUBLE_NEGATIVE_D = "2.2250738585072014D-308";
-    public static final String POSITIVE_DOUBLE_POSITIVE_D = "1.7976931348623157D+308";
-    public static final String NEGATIVE_DOUBLE_POSITIVE_D = "-1.7976931348623157D+308";
-    public static final String NEGATIVE_DOUBLE_NEGATIVE_D = "-2.2250738585072014D-308";
+    public static final double POSITIVE_DOUBLE_NEGATIVE_D = 2.2250738585072014E-308;
+    public static final double POSITIVE_DOUBLE_POSITIVE_D = 1.7976931348623157E+308;
+    public static final double NEGATIVE_DOUBLE_POSITIVE_D = -1.7976931348623157E+308;
+    public static final double NEGATIVE_DOUBLE_NEGATIVE_D = -2.2250738585072014E-308;
 
 
 

@@ -68,7 +68,7 @@ public class AS3 implements AccionSemantica {
                 reservadaMin = false;
         }
                 if (reservadaMin){
-                    Parser.agregarError(Parser.errores_lexicos, Parser.ERROR, "\"" + token + caracter + '\"');
+                    Parser.agregarError(Parser.errores_lexicos, Parser.ERROR, "\"" + "No se esperan palabras reservadas en minuscula" + '\"');
                 }
                 if (id_palabra_reservada != TablaPalabrasReservadas.PALABRA_NO_RESERVADA) {
                     identificador = id_palabra_reservada;

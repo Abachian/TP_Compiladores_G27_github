@@ -26,26 +26,19 @@ import compilador.Terceto;
 
 %%//declaracion de la gramatica del lenguaje
 
-program: begin header_program cuerpo_prog end ','
-	    | header_program begin end ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaban sentencias de ejecucion");}
-		| header_program begin cuerpo_prog ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un '}' al final del programa");}
-		| header_program cuerpo_prog end ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un '{' antes de las sentencias");}
-		| header_program begin cuerpo_prog end {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un ',' al final del programa");}
+program: begin cuerpo_prog end ','
+	    | begin end ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaban sentencias de ejecucion");}
+		| begin cuerpo_prog ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un '}' al final del programa");}
+		| cuerpo_prog end ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un '{' antes de las sentencias");}
+		| begin cuerpo_prog end {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un ',' al final del programa");}
 		| ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un programa");}
 ;
 
-header_program: nombre_programa { Parser.declarando = true; tipo = TablaTipos.STRING_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval + Parser.ambito.toString());
-                                                                                         TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
-                                                                                         TablaSimbolos.agregarAtributo(ptr_id, "uso", "Nombre del programa");}
-;
 
-begin: '{' {cambiarAmbito(":START");}
+begin: '{' {cambiarAmbito(":START"); Parser.declarando = true; tipo = TablaTipos.STRING_TYPE; cambiarAmbito("main");}
 ;
 
 end: '}'
-;
-
-nombre_programa: ID {cambiarAmbito($1.sval);}
 ;
 
 cuerpo_prog: declaraciones ejecucion
@@ -75,12 +68,12 @@ declaracion_variables: tipo list_var ','
 ;
 
 list_var: ID {
-                             int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval + Parser.ambito.toString());
+                             int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval);
                              TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
                              TablaSimbolos.agregarAtributo(ptr_id, "uso", "variable");
                              }
         | list_var ';' ID {
-                                          int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval + Parser.ambito.toString());
+                                          int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval);
                                           TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
                                           TablaSimbolos.agregarAtributo(ptr_id, "uso", "variable");
                                           }
@@ -91,21 +84,20 @@ declaracion_funcion: funcion
               	    | declaracion_impl
 ;
 
-funcion: header_funcion '(' list_de_parametros ')' '{' cuerpo_de_la_funcion '}' ',' {salirAmbito();}
+funcion: header_funcion '(' list_de_parametros ')' '{' cuerpo_de_la_funcion '}' ',' {salirAmbito(); agregarListaTercetos(codigoIntermedio);}
 		|  header_funcion '(' list_de_parametros ')' '{' '}' ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el cuerpo de la funcion");}
 ;
 
-funcion_sin_definir: header_funcion '(' list_de_parametros ')' ','
+funcion_sin_definir: header_funcion '(' list_de_parametros ')' ',' {salirAmbito(); agregarListaTercetos(codigoIntermedio);}
 ;
 
 
-header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
-			TablaSimbolos.agregarAtributo(ptr_id, "tipo", "VOID_TYPE");
+header_funcion: VOID ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+						TablaSimbolos.agregarAtributo(ptr_id, "tipo", "VOID_TYPE");
                     	TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de metodo");
                     	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");
-                    	TablaSimbolos.agregarSimbolo("@ret@" + $2.sval + Parser.ambito.toString());
-                        int ptr_ret = TablaSimbolos.obtenerSimbolo("@ret@" + $2.sval + Parser.ambito.toString());
-                        cambiarAmbito($2.sval);}
+                        cambiarAmbito($2.sval);
+                        ambitos.put($2.sval, ambito);}
             | VOID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera nombre de la funcion");}
 ;
 
@@ -118,12 +110,12 @@ list_de_parametros:
 ;
 
 
-parametro: tipo ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
-	     	    TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
+parametro: tipo ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+	     	        TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
                     TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");}
           | ID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el tipo del parametro");}
           | tipo {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el nombre del parametro");}
-	      | CLASS ID {tipo = TablaTipos.CLASS_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
+	      | CLASS ID {tipo = TablaTipos.CLASS_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
                                                                                      TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
                                                                                      TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");}
 ;
@@ -158,12 +150,11 @@ sentencia_ejecutable: asignacion ','
                 | impresion ','
                 | DO_UNTIL ','
                 | referencia_clase ','
-
 ;
 
 referencia_clase: ID '.' ID '=' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval);}
-		| ID '.' ID '=' ID '.' ID {int aux = generarTerceto($4.sval,$3.sval,$7.sval);}
-		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')' {int aux = generarTerceto("=",$3.sval,$5.sval);}
+		| ID '.' ID '=' ID '.' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval+$6.sval+$7.sval);}
+		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')' {int aux = generarTerceto($4.sval,$1.sval+$5.sval+$6.sval,$7.sval+"("+")"+$9.sval);}
 		| ID '.' ID '(' list_de_parametros ')'
 ;
 
@@ -433,7 +424,8 @@ parametro_real: expresion {}
 ;
 
 // TODO agregar ejecucion al cuerpo?
-declaracion_clase: header_clase '{' declaraciones '}' {  tipo = TablaTipos.CLASS_TYPE;
+declaracion_clase: header_clase '{' declaraciones '}' { salirAmbito();
+ 						tipo = TablaTipos.CLASS_TYPE;
 						int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
 						TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");
 						TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");}
@@ -444,15 +436,19 @@ declaracion_clase: header_clase '{' declaraciones '}' {  tipo = TablaTipos.CLASS
 ;
 
 header_clase: CLASS ID {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");
+						cambiarAmbito($2.sval);
                         int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval + Parser.ambito.toString());
                         TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");
                         TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");}
 ;
 
-declaracion_impl: header_impl ID ':' '{' funciones_impl '}'
+declaracion_impl: header_impl ':' '{' funciones_impl '}' {salirAmbito();}
 ;
 
-header_impl: IMPL FOR {agregarEstructura(estructuras_sintacticas, "Sentencia de IMPL");}
+header_impl: IMPL FOR ID {agregarEstructura(estructuras_sintacticas, "Sentencia de IMPL para el void " + $3.sval);
+						 ambito.setLength(0);
+						 ambito = obtenerAmbito($3.sval);
+						 cambiarAmbito($3.sval);}
 
 ;
 
@@ -468,11 +464,13 @@ public static final String WARNING = "Warning";
 public static final String NAME_MANGLING_CHAR = ".";
 
 public static StringBuilder ambito = new StringBuilder();
+public static final HashMap<String,StringBuilder> ambitos = new HashMap<String,StringBuilder>();
 
 public static final List<String> errores_lexicos = new ArrayList<>();
 public static final List<String> errores_sintacticos = new ArrayList<>();
 public static final List<String> errores_semanticos = new ArrayList<>();
 public static final List<String> estructuras_sintacticas = new ArrayList<>();
+public static final List<HashMap<Integer,Terceto>> estructura_Tercetos = new ArrayList<>();
 public static final HashMap<Integer,Terceto> codigoIntermedio = new HashMap<Integer,Terceto>();
 public static final Stack pila = new Stack();
 
@@ -591,6 +589,7 @@ public static void imprimirErrores(List<String> errores, String cabecera) {
                 }
         }
 }
+
 public static void imprimirEstructuras(List<String> estructuras, String cabecera) {
         // Imprimo las estructuras encontradas en el programa
 		if (!estructuras.isEmpty()) {
@@ -611,23 +610,48 @@ public int generarTerceto(String op1, String op2, String op3){
 	return punteroTerceto -1;
 }
 
-public static void imprimirTercetos() {
-  // Imprimo la lista de Tercetos
-  if (!codigoIntermedio.isEmpty()) {
+public StringBuilder obtenerAmbito(String id){
+	if (!ambitos.containsKey(id)){
+	System.out.println("El metodo a implementar no se encuentra o ya fue definido");}
+	return ambitos.get(id);
+}
+
+public static void agregarListaTercetos(HashMap<Integer,Terceto> t){
+	HashMap<Integer,Terceto> aux = new HashMap<Integer,Terceto>();
+	aux = t;
+	estructura_Tercetos.add(aux);
+}
+
+public static void imprimirListaTercetos() {
+	// Imprimo la lista de Tercetos
+	if (!estructura_Tercetos.isEmpty()) {
+		for (HashMap<Integer,Terceto> hm : estructura_Tercetos){
+                      imprimirTercetos(hm);
+                      System.out.print("Terceto Nuevo");
+                      }
+	}
+}
+
+public static void imprimirTercetos(HashMap<Integer,Terceto> hm) {
+  // Imprimo los Tercetos
+  if (!hm.isEmpty()) {
     System.out.println();
     int nroTerceto = 1;
 
-    for (Terceto terceto : codigoIntermedio.values()) {
+    for (Terceto terceto : hm.values()) {
       System.out.print("Terceto " + nroTerceto + ": ");
       terceto.print();
       nroTerceto = nroTerceto + 1;
     }
   }
-
+  else {
+      System.out.println("Terceto Vacio " + hm);
+  }
 }
 
 private static void cambiarAmbito(String nuevo_ambito) {
         //recibe el ID de una funcion, y lo concantenac con ambito
+        System.out.println("ambito" + " " + "");
         ambito.append(NAME_MANGLING_CHAR).append(nuevo_ambito);
 }
 
@@ -662,7 +686,7 @@ public static void main(String[] args) {
                         excepcion.printStackTrace();
                 }
 
-				Parser.imprimirTercetos();
+				Parser.imprimirListaTercetos();
 				TablaSimbolos.imprimirTabla();
                 Parser.imprimirErrores(errores_lexicos, "Errores Lexicos");
                 Parser.imprimirErrores(errores_sintacticos, "Errores Sintacticos");

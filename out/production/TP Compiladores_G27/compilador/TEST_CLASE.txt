@@ -1,14 +1,23 @@
-{ prog
+{
   CLASS cc {
      UINT b,
      SHORT a,
      DOUBLE vv,
      VOID m(CLASS bb) {
         UINT x,
-        j=3_ui,
-        b = 5_s,
+        VOID m(CLASS bb) {
+                UINT x,
+                VOID m(CLASS bb) {
+                        UINT x,
+                        vv = 3.2250738585072014D-308,
+                        dd = 42_ui,
+                      },
+                vv = 3.2250738585072014D-308,
+              },
         vv = 3.2250738585072014D-308,
+        ee = 2_s,
       },
   }
-
 },
+
+
