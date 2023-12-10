@@ -16,7 +16,7 @@ public class AS5 implements AccionSemantica {
         try {
 
             simbolo_aux = simbolo.replace('d', 'e').replace('D', 'E');
-            double valor =  Double.valueOf(simbolo_aux);
+            double valor =  Double.parseDouble(simbolo_aux);
 
             if (!dentroRango(valor)) {
 
@@ -49,10 +49,11 @@ public class AS5 implements AccionSemantica {
 
          */
 
-        boolean firstRange = (valor < AnalizadorLexico.NEGATIVE_DOUBLE_POSITIVE_D && valor >
-                AnalizadorLexico.NEGATIVE_DOUBLE_NEGATIVE_D);
-        boolean secondRange = (valor > AnalizadorLexico.POSITIVE_DOUBLE_NEGATIVE_D &&
-                valor < AnalizadorLexico.POSITIVE_DOUBLE_POSITIVE_D);
+
+        boolean firstRange = ((AnalizadorLexico.POSITIVE_DOUBLE_NEGATIVE_D < valor) &&
+                (valor < AnalizadorLexico.POSITIVE_DOUBLE_POSITIVE_D));
+        boolean secondRange = ((AnalizadorLexico.NEGATIVE_DOUBLE_POSITIVE_D < valor) && (valor <
+                AnalizadorLexico.NEGATIVE_DOUBLE_NEGATIVE_D));
         boolean isZero = (valor == 0);
 
         return (firstRange || secondRange || isZero);

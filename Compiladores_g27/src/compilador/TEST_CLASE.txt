@@ -1,23 +1,31 @@
-{
+{ SHORT rt,
+  UINT z,
   CLASS cc {
      UINT b,
      SHORT a,
-     DOUBLE vv,
      VOID m(CLASS bb) {
         UINT x,
         VOID m(CLASS bb) {
                 UINT x,
-                VOID m(CLASS bb) {
-                        UINT x,
+                VOID w(CLASS bb) {
+                        UINT a,
                         vv = 3.2250738585072014D-308,
                         dd = 42_ui,
                       },
+                SHORT b,
                 vv = 3.2250738585072014D-308,
               },
         vv = 3.2250738585072014D-308,
         ee = 2_s,
       },
   }
+  CLASS cd {
+       UINT b,
+       SHORT a,
+      }
+    CLASS cd {
+         UINT b,
+         SHORT a,
+        }
+    as = 23_ui,
 },
-
-

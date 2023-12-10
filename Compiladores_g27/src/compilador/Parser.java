@@ -678,12 +678,12 @@ final static String yyrule[] = {
 "funciones_impl : funcion",
 };
 
-//#line 460 "gramatica.y"
+//#line 486 "gramatica.y"
 public static boolean declarando = true;
 
 public static final String ERROR = "Error";
 public static final String WARNING = "Warning";
-public static final String NAME_MANGLING_CHAR = ".";
+public static final String NAME_MANGLING_CHAR = ":";
 
 public static StringBuilder ambito = new StringBuilder();
 public static final HashMap<String,StringBuilder> ambitos = new HashMap<String,StringBuilder>();
@@ -692,12 +692,13 @@ public static final List<String> errores_lexicos = new ArrayList<>();
 public static final List<String> errores_sintacticos = new ArrayList<>();
 public static final List<String> errores_semanticos = new ArrayList<>();
 public static final List<String> estructuras_sintacticas = new ArrayList<>();
-public static final List<HashMap<Integer,Terceto>> estructura_Tercetos = new ArrayList<>();
-public static final HashMap<Integer,Terceto> codigoIntermedio = new HashMap<Integer,Terceto>();
+public static final HashMap<String,HashMap<Integer,Terceto>> estructura_Tercetos = new HashMap<>();
+public static final HashMap<Integer,Terceto> codigoIntermedio = new HashMap<>();
 public static final Stack pila = new Stack();
-
+public static int intDeclarando = 0;
 private static boolean errores_compilacion;
 private static String tipo;
+private static List<String> metodo = new ArrayList<>();
 private int punteroTerceto = 1;
 
 private static int contador_cadenas = 0;
@@ -787,15 +788,23 @@ public static boolean pertenece(String simbolo) {
         }
 }
 
-public static boolean chequearParametro(String parametro, String funcion) {
-        //esta funcion chequea si el tipo de un parametro es valido para una funcion
-        int puntero_parametro = TablaSimbolos.obtenerSimboloAmbito(parametro);
-        int puntero_funcion = TablaSimbolos.obtenerSimboloAmbito(funcion);
+public static void agregarSimbolo(String str, String tipo) {
+                    	if (TablaSimbolos.obtenerSimbolo(str) == -1){
+				TablaSimbolos.agregarSimbolo(str);
 
-        String tipoParametro = TablaSimbolos.obtenerAtributo(puntero_parametro, "tipo");
-        String tipoFuncion = TablaSimbolos.obtenerAtributo(puntero_funcion, "tipo_parametro");
+                    	}
+                    	else {
+                    		String ambitoLexema = TablaSimbolos.obtenerSimboloAmbito(str);
+				if (ambito.toString().contains(ambitoLexema)){
+					agregarError(errores_semanticos, Parser.ERROR, tipo + str + " ya declarada");
+				}
+				else{
+					TablaSimbolos.agregarSimbolo(str);
 
-        return tipoParametro == tipoFuncion;
+				}
+                    	}
+
+
 }
 
 //--FUNCIONES DE IMPRESION Y MAIN--//
@@ -838,20 +847,21 @@ public StringBuilder obtenerAmbito(String id){
 	return ambitos.get(id);
 }
 
-public static void agregarListaTercetos(HashMap<Integer,Terceto> t){
-	HashMap<Integer,Terceto> aux = new HashMap<Integer,Terceto>();
-	aux = t;
-	estructura_Tercetos.add(aux);
+public static void agregarListaTercetos(String s, HashMap<Integer,Terceto> t){
+	HashMap<Integer,Terceto> aux = new HashMap<Integer,Terceto>(t);
+	estructura_Tercetos.put(s, aux);
+	t.clear();
 }
 
 public static void imprimirListaTercetos() {
 	// Imprimo la lista de Tercetos
 	if (!estructura_Tercetos.isEmpty()) {
-		for (HashMap<Integer,Terceto> hm : estructura_Tercetos){
-                      imprimirTercetos(hm);
-                      System.out.print("Terceto Nuevo");
-                      }
-	}
+        for (String s:  estructura_Tercetos.keySet()) {
+          HashMap<Integer,Terceto> hm = estructura_Tercetos.get(s);
+          System.out.print("Llave :" + s);
+          imprimirTercetos(hm);
+        }
+    }
 }
 
 public static void imprimirTercetos(HashMap<Integer,Terceto> hm) {
@@ -873,7 +883,6 @@ public static void imprimirTercetos(HashMap<Integer,Terceto> hm) {
 
 private static void cambiarAmbito(String nuevo_ambito) {
         //recibe el ID de una funcion, y lo concantenac con ambito
-        System.out.println("ambito" + " " + "");
         ambito.append(NAME_MANGLING_CHAR).append(nuevo_ambito);
 }
 
@@ -912,13 +921,14 @@ public static void main(String[] args) {
 				TablaSimbolos.imprimirTabla();
                 Parser.imprimirErrores(errores_lexicos, "Errores Lexicos");
                 Parser.imprimirErrores(errores_sintacticos, "Errores Sintacticos");
+                Parser.imprimirErrores(errores_semanticos, "Errores Semanticos");
                 Parser.imprimirEstructuras(estructuras_sintacticas, "Estructuras");
 
         }
 
 
 
-//#line 850 "Parser.java"
+//#line 860 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -1094,11 +1104,7 @@ case 6:
 break;
 case 7:
 //#line 38 "gramatica.y"
-{cambiarAmbito(":START"); Parser.declarando = true; tipo = TablaTipos.STRING_TYPE; cambiarAmbito("main");}
-break;
-case 10:
-//#line 45 "gramatica.y"
-{Parser.declarando = false;}
+{cambiarAmbito(":START"); Parser.declarando = false; tipo = TablaTipos.STRING_TYPE; cambiarAmbito("main");}
 break;
 case 12:
 //#line 47 "gramatica.y"
@@ -1108,97 +1114,111 @@ case 13:
 //#line 48 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "No se esperaban declaraciones luego de la ejecucion");}
 break;
+case 14:
+//#line 53 "gramatica.y"
+{Parser.declarando = false;}
+break;
+case 15:
+//#line 54 "gramatica.y"
+{Parser.declarando = false;}
+break;
 case 23:
 //#line 70 "gramatica.y"
-{
-                             int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
-                             TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
-                             TablaSimbolos.agregarAtributo(ptr_id, "uso", "variable");
-                             }
+{					Parser.agregarSimbolo(val_peek(0).sval, "variable ");
+								int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
+                            	TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
+                                TablaSimbolos.agregarAtributo(ptr_id, "uso", "variable");
+
+                                TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
 break;
 case 24:
-//#line 75 "gramatica.y"
-{
+//#line 78 "gramatica.y"
+{				Parser.agregarSimbolo(val_peek(0).sval, "variable ");
                                           int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(2).sval);
-                                          TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
-                                          TablaSimbolos.agregarAtributo(ptr_id, "uso", "variable");
-                                          }
+                                               TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
+                                               TablaSimbolos.agregarAtributo(ptr_id, "uso", "variable");
+                                               TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
 break;
 case 28:
-//#line 87 "gramatica.y"
-{salirAmbito(); agregarListaTercetos(codigoIntermedio);}
+//#line 90 "gramatica.y"
+{
+											salirAmbito();
+											Parser.declarando = true;
+											agregarListaTercetos(metodo.get(metodo.size()-1), codigoIntermedio); metodo.remove(metodo.size()-1);}
 break;
 case 29:
-//#line 88 "gramatica.y"
+//#line 94 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el cuerpo de la funcion");}
 break;
 case 30:
-//#line 91 "gramatica.y"
-{salirAmbito(); agregarListaTercetos(codigoIntermedio);}
+//#line 97 "gramatica.y"
+{salirAmbito(); agregarListaTercetos(metodo.get(metodo.size()-1), codigoIntermedio); metodo.remove(metodo.size()-1);}
 break;
 case 31:
-//#line 95 "gramatica.y"
-{int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
+//#line 101 "gramatica.y"
+{ Parser.agregarSimbolo(val_peek(0).sval, "nombre de metodo ");
+						int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
 						TablaSimbolos.agregarAtributo(ptr_id, "tipo", "VOID_TYPE");
                     	TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de metodo");
+                    	TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);
                     	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");
                         cambiarAmbito(val_peek(0).sval);
-                        ambitos.put(val_peek(0).sval, ambito);}
+
+                        ambitos.put(val_peek(0).sval, ambito);
+                        metodo.add(val_peek(0).sval);}
 break;
 case 32:
-//#line 101 "gramatica.y"
+//#line 111 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera nombre de la funcion");}
 break;
 case 37:
-//#line 113 "gramatica.y"
+//#line 124 "gramatica.y"
 {int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
 	     	        TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
-                    TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");}
+                    TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");
+                    TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
 break;
 case 38:
-//#line 116 "gramatica.y"
+//#line 128 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el tipo del parametro");}
 break;
 case 39:
-//#line 117 "gramatica.y"
+//#line 129 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el nombre del parametro");}
 break;
 case 40:
-//#line 118 "gramatica.y"
+//#line 130 "gramatica.y"
 {tipo = TablaTipos.CLASS_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
                                                                                      TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
-                                                                                     TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");}
+                                                                                     TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");
+                                                                                     TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
 break;
 case 41:
-//#line 124 "gramatica.y"
+//#line 137 "gramatica.y"
 {tipo = TablaTipos.UINT_TYPE;}
 break;
 case 42:
-//#line 125 "gramatica.y"
+//#line 138 "gramatica.y"
 {tipo = TablaTipos.SHORT_TYPE;}
 break;
 case 43:
-//#line 126 "gramatica.y"
+//#line 139 "gramatica.y"
 {tipo = TablaTipos.DOUBLE_TYPE;}
 break;
-case 44:
-//#line 130 "gramatica.y"
-{}
-break;
 case 56:
-//#line 155 "gramatica.y"
+//#line 168 "gramatica.y"
 {int aux = generarTerceto(val_peek(1).sval,val_peek(4).sval+val_peek(3).sval+val_peek(2).sval,val_peek(0).sval);}
 break;
 case 57:
-//#line 156 "gramatica.y"
+//#line 169 "gramatica.y"
 {int aux = generarTerceto(val_peek(3).sval,val_peek(6).sval+val_peek(5).sval+val_peek(4).sval,val_peek(2).sval+val_peek(1).sval+val_peek(0).sval);}
 break;
 case 58:
-//#line 157 "gramatica.y"
+//#line 170 "gramatica.y"
 {int aux = generarTerceto(val_peek(6).sval,val_peek(9).sval+val_peek(5).sval+val_peek(4).sval,val_peek(3).sval+"("+")"+val_peek(1).sval);}
 break;
 case 60:
-//#line 161 "gramatica.y"
+//#line 174 "gramatica.y"
 {int i = codigoIntermedio.size();
                                                             boolean encontrado = false;
                                                             while (!encontrado && i > 0 )
@@ -1214,58 +1234,58 @@ case 60:
                                                             }
 break;
 case 61:
-//#line 175 "gramatica.y"
+//#line 188 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias entre DO y UNTIL"); }
 break;
 case 62:
-//#line 178 "gramatica.y"
+//#line 191 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto("DO","-","-"))+ "]";
          agregarEstructura(estructuras_sintacticas, "Sentencia DO_UNTIL ");}
 break;
 case 66:
-//#line 185 "gramatica.y"
+//#line 198 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias entre DO y UNTIL"); }
 break;
 case 67:
-//#line 186 "gramatica.y"
+//#line 199 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera un '{' "); }
 break;
 case 71:
-//#line 194 "gramatica.y"
+//#line 207 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
 break;
 case 73:
-//#line 196 "gramatica.y"
+//#line 209 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
 break;
 case 75:
-//#line 198 "gramatica.y"
+//#line 211 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ','"); }
 break;
 case 77:
-//#line 203 "gramatica.y"
+//#line 216 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
                                                                       yyval.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 break;
 case 78:
-//#line 205 "gramatica.y"
+//#line 218 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
                                                                                  yyval.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 break;
 case 79:
-//#line 207 "gramatica.y"
+//#line 220 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
 break;
 case 80:
-//#line 208 "gramatica.y"
+//#line 221 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
 break;
 case 81:
-//#line 211 "gramatica.y"
+//#line 224 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia IF");}
 break;
 case 82:
-//#line 214 "gramatica.y"
+//#line 227 "gramatica.y"
 {int i = codigoIntermedio.size();
                                        			   boolean encontrado = false;
                                        			   while (!encontrado && i > 0 ){
@@ -1279,7 +1299,7 @@ case 82:
                                        }
 break;
 case 83:
-//#line 227 "gramatica.y"
+//#line 240 "gramatica.y"
 {int i = codigoIntermedio.size();
                                                    					     boolean encontrado = false;
                                                    					     while (!encontrado && i > 0 ){
@@ -1293,37 +1313,37 @@ case 83:
                                                    					    }
 break;
 case 84:
-//#line 238 "gramatica.y"
+//#line 251 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
 break;
 case 85:
-//#line 241 "gramatica.y"
+//#line 254 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
 																	yyval.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 break;
 case 86:
-//#line 243 "gramatica.y"
+//#line 256 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia IF");
 											   yyval.sval = "[" + Integer.toString(generarTerceto("IfFin","-","-"))+ "]";  }
 break;
 case 87:
-//#line 245 "gramatica.y"
+//#line 258 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan llaves "); }
 break;
 case 88:
-//#line 246 "gramatica.y"
+//#line 259 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera ELSE"); }
 break;
 case 89:
-//#line 247 "gramatica.y"
+//#line 260 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias luego del Then"); }
 break;
 case 90:
-//#line 248 "gramatica.y"
+//#line 261 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera bloque de sentencias despues del ELSE"); }
 break;
 case 91:
-//#line 251 "gramatica.y"
+//#line 264 "gramatica.y"
 {  int i = codigoIntermedio.size();
 			   boolean encontrado = false;
 			   while (!encontrado && i > 0 ){
@@ -1337,7 +1357,7 @@ case 91:
                            }
 break;
 case 92:
-//#line 262 "gramatica.y"
+//#line 275 "gramatica.y"
 {  int i = codigoIntermedio.size();
                                                          			   boolean encontrado = false;
                                                          			   while (!encontrado && i > 0 ){
@@ -1351,7 +1371,7 @@ case 92:
                                                                                     }
 break;
 case 93:
-//#line 273 "gramatica.y"
+//#line 286 "gramatica.y"
 {  int i = codigoIntermedio.size();
                                                			   boolean encontrado = false;
                                                			   while (!encontrado && i > 0 ){
@@ -1365,23 +1385,23 @@ case 93:
                                                                           }
 break;
 case 94:
-//#line 284 "gramatica.y"
+//#line 297 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera la palabra reservada RETURN");}
 break;
 case 95:
-//#line 285 "gramatica.y"
+//#line 298 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera expresión de retorno");}
 break;
 case 96:
-//#line 286 "gramatica.y"
+//#line 299 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias luego de la condicion");}
 break;
 case 97:
-//#line 287 "gramatica.y"
+//#line 300 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "No se espera ',' "); }
 break;
 case 98:
-//#line 292 "gramatica.y"
+//#line 305 "gramatica.y"
 {int i = codigoIntermedio.size();
 					     boolean encontrado = false;
 					     while (!encontrado && i > 0 ){
@@ -1395,7 +1415,7 @@ case 98:
 					}
 break;
 case 99:
-//#line 304 "gramatica.y"
+//#line 317 "gramatica.y"
 {int i = codigoIntermedio.size();
                                                                					     boolean encontrado = false;
                                                                					     while (!encontrado && i > 0 ){
@@ -1408,7 +1428,7 @@ case 99:
                                                                					     }}
 break;
 case 100:
-//#line 314 "gramatica.y"
+//#line 327 "gramatica.y"
 {int i = codigoIntermedio.size();
                                              					     boolean encontrado = false;
                                              					     while (!encontrado && i > 0 ){
@@ -1421,195 +1441,208 @@ case 100:
                                              					     }}
 break;
 case 101:
-//#line 324 "gramatica.y"
+//#line 337 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera la palabra reservada RETURN");}
 break;
 case 102:
-//#line 325 "gramatica.y"
+//#line 338 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera expresión de retorno");}
 break;
 case 103:
-//#line 326 "gramatica.y"
+//#line 339 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se esperan sentencias dentro del cuerpo del ELSE ");}
 break;
 case 104:
-//#line 329 "gramatica.y"
+//#line 342 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto("BI","incompleto","-"))+ "]";  }
 break;
 case 105:
-//#line 333 "gramatica.y"
+//#line 346 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto("BF",val_peek(1).sval,"incompleto"))+ "]";  }
 break;
 case 106:
-//#line 334 "gramatica.y"
+//#line 347 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera '(' al principio de la condicion");}
 break;
 case 107:
-//#line 335 "gramatica.y"
+//#line 348 "gramatica.y"
 { agregarError(errores_sintacticos, Parser.ERROR, "Se espera una condicion");}
 break;
 case 109:
-//#line 340 "gramatica.y"
+//#line 353 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto(val_peek(1).sval,yyval.sval,val_peek(0).sval))+ "]";}
 break;
 case 110:
-//#line 343 "gramatica.y"
+//#line 356 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto(val_peek(1).sval,val_peek(2).sval,val_peek(0).sval))+ "]";}
 break;
 case 111:
-//#line 345 "gramatica.y"
+//#line 358 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion luego del comparador");}
 break;
 case 112:
-//#line 346 "gramatica.y"
+//#line 359 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion antes del comparador");}
 break;
 case 119:
-//#line 357 "gramatica.y"
+//#line 370 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 									  int aux = generarTerceto(val_peek(3).sval,val_peek(4).sval,val_peek(1).sval);
+									  if(!TablaSimbolos.isVariableDeclarada(val_peek(4).sval)){
+									  	agregarError(errores_semanticos, Parser.ERROR, val_peek(4).sval + " variable no declarada");
+									  }
+									  
 						}
 break;
 case 120:
-//#line 360 "gramatica.y"
+//#line 377 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 										int aux = generarTerceto("+",val_peek(4).sval,val_peek(1).sval);
 										int aux2 = generarTerceto("=",val_peek(4).sval,"[" + aux +"]");
+										TablaSimbolos.isVariableDeclarada(val_peek(4).sval);
 			}
 break;
 case 121:
-//#line 364 "gramatica.y"
+//#line 382 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
-								int aux = generarTerceto(val_peek(1).sval,val_peek(2).sval,val_peek(0).sval);}
+								int aux = generarTerceto(val_peek(1).sval,val_peek(2).sval,val_peek(0).sval);
+								TablaSimbolos.isVariableDeclarada(val_peek(2).sval);}
 break;
 case 122:
-//#line 367 "gramatica.y"
+//#line 386 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 								 int aux = generarTerceto("+",val_peek(2).sval,val_peek(0).sval);
                         		 int aux2 = generarTerceto("=",val_peek(2).sval,"[" + aux +"]");
+                        		 TablaSimbolos.isVariableDeclarada(val_peek(2).sval);
 			}
 break;
 case 123:
-//#line 371 "gramatica.y"
+//#line 391 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 break;
 case 124:
-//#line 372 "gramatica.y"
+//#line 392 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera un identificador en el lado izquierdo de la asignacion");}
 break;
 case 125:
-//#line 373 "gramatica.y"
+//#line 393 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 break;
 case 126:
-//#line 376 "gramatica.y"
+//#line 396 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto(val_peek(1).sval,yyval.sval,val_peek(0).sval))+ "]";
                                             }
 break;
 case 127:
-//#line 378 "gramatica.y"
+//#line 398 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto(val_peek(1).sval,yyval.sval,val_peek(0).sval))+ "]";}
 break;
 case 129:
-//#line 382 "gramatica.y"
+//#line 402 "gramatica.y"
 { yyval.sval = "[" + Integer.toString(generarTerceto(val_peek(1).sval,yyval.sval,val_peek(0).sval))+ "]";}
 break;
 case 130:
-//#line 383 "gramatica.y"
+//#line 403 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto("/",yyval.sval,val_peek(0).sval))+ "]";}
 break;
 case 132:
-//#line 387 "gramatica.y"
+//#line 407 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto(val_peek(1).sval,yyval.sval,val_peek(0).sval))+ "]";  }
 break;
 case 133:
-//#line 388 "gramatica.y"
+//#line 408 "gramatica.y"
 {yyval.sval = "[" + Integer.toString(generarTerceto("/",yyval.sval,val_peek(0).sval))+ "]";}
 break;
 case 137:
-//#line 394 "gramatica.y"
+//#line 414 "gramatica.y"
 {}
 break;
 case 140:
-//#line 399 "gramatica.y"
+//#line 419 "gramatica.y"
 {}
 break;
 case 141:
-//#line 402 "gramatica.y"
+//#line 422 "gramatica.y"
 {int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
 		TablaSimbolos.agregarAtributo(ptr_id, "uso", "constante");
-		TablaSimbolos.agregarAtributo(ptr_id, "tipo", TablaSimbolos.getTipo(val_peek(0).sval));}
+		TablaSimbolos.agregarAtributo(ptr_id, "tipo", TablaSimbolos.getTipo(val_peek(0).sval));
+		TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
 break;
 case 142:
-//#line 405 "gramatica.y"
+//#line 426 "gramatica.y"
 {int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
                    		TablaSimbolos.agregarAtributo(ptr_id, "uso", "constante");
                    		TablaSimbolos.agregarAtributo(ptr_id, "tipo", TablaSimbolos.getTipo(val_peek(0).sval));
+                   		TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);
                    		String lexema = negarConstante(val_peek(0).sval);}
 break;
 case 143:
-//#line 411 "gramatica.y"
+//#line 433 "gramatica.y"
 { String nombre = STRING_CHAR + "cadena" + String.valueOf(contador_cadenas);
-                          TablaSimbolos.agregarSimbolo(nombre);
+                          agregarSimbolo(nombre, "cadena ");
                           int puntero = TablaSimbolos.obtenerSimbolo(nombre);
                           }
 break;
 case 144:
-//#line 414 "gramatica.y"
+//#line 436 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Comentario");}
 break;
 case 145:
-//#line 415 "gramatica.y"
+//#line 437 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera un mensaje luego del PRINT ");}
 break;
 case 146:
-//#line 419 "gramatica.y"
+//#line 441 "gramatica.y"
 {}
 break;
 case 147:
-//#line 420 "gramatica.y"
+//#line 442 "gramatica.y"
 {}
 break;
 case 148:
-//#line 423 "gramatica.y"
+//#line 445 "gramatica.y"
 {}
 break;
 case 149:
-//#line 427 "gramatica.y"
+//#line 449 "gramatica.y"
 { salirAmbito();
  						tipo = TablaTipos.CLASS_TYPE;
-						int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(2).sval + Parser.ambito.toString());
+						int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(3).sval + Parser.ambito.toString());
 						TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");
-						TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");}
+						TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");
+						TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
 break;
 case 151:
-//#line 434 "gramatica.y"
+//#line 457 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una declaracion dentro de las llaves");}
 break;
 case 152:
-//#line 435 "gramatica.y"
+//#line 458 "gramatica.y"
 {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una ID previo a las llaves");}
 break;
 case 153:
-//#line 438 "gramatica.y"
+//#line 461 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Declaracion de Clase");
 						cambiarAmbito(val_peek(0).sval);
-                        int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval + Parser.ambito.toString());
+						Parser.agregarSimbolo(val_peek(0).sval, "nombre de clase ");
+                        int ptr_id = TablaSimbolos.obtenerSimbolo(val_peek(0).sval);
                         TablaSimbolos.agregarAtributo(ptr_id, "tipo", "CLASS_TYPE");
-                        TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");}
+                        TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");
+                        TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);
+                         }
 break;
 case 154:
-//#line 445 "gramatica.y"
+//#line 471 "gramatica.y"
 {salirAmbito();}
 break;
 case 155:
-//#line 448 "gramatica.y"
+//#line 474 "gramatica.y"
 {agregarEstructura(estructuras_sintacticas, "Sentencia de IMPL para el void " + val_peek(0).sval);
-						 ambito.setLength(0);
+
 						 ambito = obtenerAmbito(val_peek(0).sval);
 						 cambiarAmbito(val_peek(0).sval);}
 break;
-//#line 1536 "Parser.java"
+//#line 1569 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####
