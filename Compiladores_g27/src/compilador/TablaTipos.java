@@ -1,5 +1,9 @@
 package compilador;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 public class TablaTipos {
     public static final int SHORT = 0;
     public static final int UINT = 1;
@@ -16,9 +20,16 @@ public class TablaTipos {
     public static final String STRING_TYPE = "string";
     public static final String ERROR_TYPE = "error";
 
-    public static String getTipo(String op) {
-        int puntOp = TablaSimbolos.obtenerSimbolo(op);
-        return TablaSimbolos.obtenerAtributo(puntOp, "tipo");
+    public static String getTipo(String lexema, String ambito) {
+        String resultado = "NULL";
+        for (Map.Entry<Integer, Map<String, String>> entrada : TablaSimbolos.simbolos.entrySet()) {
+            if (Objects.equals(entrada.getValue().get("lexema"), lexema) && Objects.equals(entrada.getValue().get("ambito"), ambito)) {
+                resultado = entrada.getValue().get("tipo");
+            }
+
+        }
+
+        return resultado;
     }
 
     private static int getNumeroTipo(String tipo) {

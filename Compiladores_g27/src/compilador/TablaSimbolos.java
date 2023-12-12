@@ -46,13 +46,11 @@ public class TablaSimbolos {
     }
 
     public static boolean isVariableDeclarada(String lexema) {
-        System.out.println("ESTE ES EL LEXEMA: " + lexema);
-        System.out.println("ESTOS SON LOS VALORES DE aparicionesLexema: "+ aparicionesLexema.toString());
-        System.out.println("ESTE ES EL VALOR BOOL: "+aparicionesLexema.containsKey(lexema));
-
         return  aparicionesLexema.containsKey(lexema);
 
     }
+
+
 
 
 

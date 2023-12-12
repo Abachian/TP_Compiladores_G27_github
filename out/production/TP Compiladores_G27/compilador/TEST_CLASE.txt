@@ -1,11 +1,23 @@
 { SHORT rt,
   UINT z,
+  SHORT vv,
+  UINT l,
+  UINT k,
+  VOID mnb (UINT x){
+          x = 5_ui,
+      },
+  CLASS bb {
+    VOID h (UINT x){
+        x = 5_ui,
+    },
+  }
+  bb a1,
   CLASS cc {
-     UINT b,
      SHORT a,
-     VOID m(CLASS bb) {
+     VOID o(CLASS nn) {
         UINT x,
-        VOID m(CLASS bb) {
+
+        VOID m(CLASS ou) {
                 UINT x,
                 VOID w(CLASS bb) {
                         UINT a,
@@ -27,5 +39,16 @@
          UINT b,
          SHORT a,
         }
-    as = 23_ui,
-},
+  cc p,
+  nn xa,
+
+
+
+  a1.l = p.k,
+  z = 8_ui,
+  vv = 3_s,
+  l = 25_ui,
+  z = z + l,
+  p.o(xa),
+  k = mnb(l),
+  },

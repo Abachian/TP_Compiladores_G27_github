@@ -26,7 +26,7 @@ import compilador.Terceto;
 
 %%//declaracion de la gramatica del lenguaje
 
-program: begin cuerpo_prog end ','
+program: begin cuerpo_prog end ',' {metodo.add("ejecución"); agregarListaTercetos(metodo.get(metodo.size()-1), codigoIntermedio);}
 	    | begin end ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaban sentencias de ejecucion");}
 		| begin cuerpo_prog ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un '}' al final del programa");}
 		| cuerpo_prog end ',' {agregarError(errores_sintacticos, Parser.ERROR, "Se esperaba un '{' antes de las sentencias");}
@@ -105,9 +105,9 @@ header_funcion: VOID ID { Parser.agregarSimbolo($2.sval, "nombre de metodo ");
                     	TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);
                     	agregarEstructura(estructuras_sintacticas, "Declaracion de Funcion");
                         cambiarAmbito($2.sval);
-
                         ambitos.put($2.sval, ambito);
-                        metodo.add($2.sval);}
+                        metodo.add($2.sval);
+                        Parser.id_funcion = $2.sval;}
             | VOID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera nombre de la funcion");}
 ;
 
@@ -116,21 +116,37 @@ cuerpo_de_la_funcion: declaraciones ejecucion_funcion
 ;
 
 
-list_de_parametros:
+list_de_parametros: {Parser.parametro_funcion = "NULL";
+					agregarFuncion(id_funcion, TablaTipos.getTipo(parametro_funcion, ambito.toString()));}
 	           | parametro
 ;
 
 
-parametro: tipo ID {int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+parametro: tipo ID {Parser.agregarSimbolo($2.sval, "parametro ");
+					int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
 	     	        TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
                     TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");
-                    TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
+                    TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);
+                    Parser.parametro_funcion = $2.sval;
+                    agregarFuncion(id_funcion, TablaTipos.getTipo(parametro_funcion, ambito.toString()));}
           | ID {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el tipo del parametro");}
           | tipo {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el nombre del parametro");}
-	      | CLASS ID {tipo = TablaTipos.CLASS_TYPE; int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
+	      | CLASS ID {tipo = TablaTipos.CLASS_TYPE; Parser.agregarSimbolo($2.sval, "parametro "); int ptr_id = TablaSimbolos.obtenerSimbolo($2.sval);
                                                                                      TablaSimbolos.agregarAtributo(ptr_id, "tipo", tipo);
                                                                                      TablaSimbolos.agregarAtributo(ptr_id, "uso", "parametro");
-                                                                                     TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);}
+                                                                                     TablaSimbolos.agregarAtributoConAmbito(ptr_id, "ambito", ambito);
+                                                                                     Parser.parametro_funcion = $2.sval;
+                                                                                     agregarFuncion(id_funcion, TablaTipos.getTipo(parametro_funcion, ambito.toString()));}
+;
+
+list_de_parametros_clase: {Parser.parametro_funcion = "NULL";}
+	           | parametro_clase
+;
+
+
+parametro_clase: tipo ID {Parser.parametro_funcion = $2.sval;}
+          | ID {Parser.parametro_funcion = $1.sval;}
+          | tipo {agregarError(errores_sintacticos, Parser.ERROR, "Se espera el nombre del parametro");}
 ;
 
 
@@ -165,10 +181,24 @@ sentencia_ejecutable: asignacion ','
                 | referencia_clase ','
 ;
 
-referencia_clase: ID '.' ID '=' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval);}
-		| ID '.' ID '=' ID '.' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval+$6.sval+$7.sval);}
-		| ID '.' ID '=' ID '.' ID '(' list_de_parametros ')' {int aux = generarTerceto($4.sval,$1.sval+$5.sval+$6.sval,$7.sval+"("+")"+$9.sval);}
-		| ID '.' ID '(' list_de_parametros ')'
+referencia_clase: ID '.' ID '=' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval);
+if (!Parser.mismoTipo($3.sval, $5.sval, ambito.toString())){
+									agregarError(errores_semanticos, Parser.ERROR, "Se requieren operandos del mismo tipo");}}
+		| ID '.' ID '=' ID '.' ID {int aux = generarTerceto($4.sval,$1.sval+$2.sval+$3.sval,$5.sval+$6.sval+$7.sval);
+									if (!Parser.mismoTipo($3.sval, $7.sval, ambito.toString())){
+									agregarError(errores_semanticos, Parser.ERROR, "Se requieren operandos del mismo tipo");}}
+		| ID '.' ID '(' list_de_parametros_clase ')'  {int aux = generarTerceto("CALL",$1.sval+"."+$3.sval,Parser.parametro_funcion);
+								if(Parser.funciones.containsKey($3.sval)){
+								if (Parser.funciones.get($3.sval).equals(TablaTipos.getTipo(Parser.parametro_funcion, ambito.toString())) || !Parser.parametro_funcion.equals("NULL")){
+												if (!Parser.mismoTipoFuncion($3.sval, Parser.parametro_funcion, ambito.toString())){
+
+													agregarError(errores_semanticos, Parser.ERROR, "El tipo del parametro no corresponde con el de la funcion");
+												}
+								}
+								else{
+								agregarError(errores_semanticos, Parser.ERROR, "La cantidad de parametros no corresponde con el de la funcion");
+								}
+							}else{agregarError(errores_semanticos, Parser.ERROR, "Funcion no declarada");}}
 ;
 
 DO_UNTIL: pdo bloque_sentencias_do UNTIL '(' condicion ')' {int i = codigoIntermedio.size();
@@ -353,7 +383,8 @@ condicion: expresion_bool
         | condicion comparador expresion_bool {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
 ;
 
-expresion_bool: expresion comparador expresion {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$1.sval,$3.sval))+ "]";}
+expresion_bool: expresion comparador expresion {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$1.sval,$3.sval))+ "]";
+if(!mismoTipo($1.sval,$3.sval, ambito.toString())){agregarError(errores_semanticos, Parser.ERROR, "La operación requiere operandos del mismo tipo");}}
 
 		| expresion comparador {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion luego del comparador");}
         | comparador expresion {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion antes del comparador");}
@@ -370,31 +401,45 @@ comparador: comp_distinto
 asignacion: ID '=' '(' expresion ')' {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 									  int aux = generarTerceto($2.sval,$1.sval,$4.sval);
 									  if(!TablaSimbolos.isVariableDeclarada($1.sval)){
-									  	agregarError(errores_semanticos, Parser.ERROR, $1.sval + " variable no declarada");
-									  }
-
+									  agregarError(errores_semanticos, Parser.ERROR, $1.sval + " variable no declarada");
+									  if(!mismoTipo($1.sval,$3.sval, ambito.toString())){
+                                      agregarError(errores_semanticos, Parser.ERROR, "La operación requiere operandos del mismo tipo");
+                                      }
+							 }
 						}
+
 			| ID SUMA '(' expresion ')'{agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 										int aux = generarTerceto("+",$1.sval,$4.sval);
 										int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
-										TablaSimbolos.isVariableDeclarada($1.sval);
+										if(!TablaSimbolos.isVariableDeclarada($1.sval)){
+										agregarError(errores_semanticos, Parser.ERROR, $1.sval + " variable no declarada");
+										if(!mismoTipo($1.sval,$3.sval, ambito.toString())){agregarError(errores_semanticos, Parser.ERROR, "La operación requiere operandos del mismo tipo");
+
+}}
 			}
 			| ID '=' expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 								int aux = generarTerceto($2.sval,$1.sval,$3.sval);
-								TablaSimbolos.isVariableDeclarada($1.sval);}
+								if(!TablaSimbolos.isVariableDeclarada($1.sval)){
+                                agregarError(errores_semanticos, Parser.ERROR, $1.sval + " variable no declarada");}
+                                if(!mismoTipo($1.sval,$3.sval, ambito.toString())){
+                                agregarError(errores_semanticos, Parser.ERROR, "La operación requiere operandos del mismo tipo");
+}}
 
 			| ID SUMA expresion {agregarEstructura(estructuras_sintacticas, "Sentencia de asignacion");
 								 int aux = generarTerceto("+",$1.sval,$3.sval);
                         		 int aux2 = generarTerceto("=",$1.sval,"[" + aux +"]");
-                        		 TablaSimbolos.isVariableDeclarada($1.sval);
+                        		 if(!TablaSimbolos.isVariableDeclarada($1.sval)){
+                                 agregarError(errores_semanticos, Parser.ERROR, $1.sval + " variable no declarada");
+                                 if(!mismoTipo($1.sval,$3.sval, ambito.toString())){agregarError(errores_semanticos, Parser.ERROR, "La operación requiere operandos del mismo tipo");
+}}
 			}
+
 			| ID SUMA {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 			| '=' expresion {agregarError(errores_sintacticos, Parser.ERROR, "Se espera un identificador en el lado izquierdo de la asignacion");}
             | ID '='  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera una expresion del lado derecho de la asignacion");}
 ;
 
-expresion: expresion '+' termino_positivo  {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";
-                                            }
+expresion: expresion '+' termino_positivo  {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
         | expresion '-' termino_positivo {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
         | termino
 ;
@@ -404,7 +449,7 @@ termino: termino '*' factor { $$.sval = "[" + Integer.toString(generarTerceto($2
 		| factor
 ;
 
-termino_positivo: termino_positivo '*' factor {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";  }
+termino_positivo: termino_positivo '*' factor {$$.sval = "[" + Integer.toString(generarTerceto($2.sval,$$.sval,$3.sval))+ "]";}
             | termino_positivo '/' factor {$$.sval = "[" + Integer.toString(generarTerceto("/",$$.sval,$3.sval))+ "]";}
             | factor_positivo
 ;
@@ -433,7 +478,8 @@ constante: cte {int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval);
 impresion: PRINT  cadena { String nombre = STRING_CHAR + "cadena" + String.valueOf(contador_cadenas);
                           agregarSimbolo(nombre, "cadena ");
                           int puntero = TablaSimbolos.obtenerSimbolo(nombre);
-                          }{agregarEstructura(estructuras_sintacticas, "Comentario");}
+                          int aux = generarTerceto("PRINT", $2.sval, "-");
+                          agregarEstructura(estructuras_sintacticas, "Comentario");}
 		| PRINT  {agregarError(errores_sintacticos, Parser.ERROR, "Se espera un mensaje luego del PRINT ");}
 
 ;
@@ -488,7 +534,9 @@ public static boolean declarando = true;
 public static final String ERROR = "Error";
 public static final String WARNING = "Warning";
 public static final String NAME_MANGLING_CHAR = ":";
-
+public static String id_funcion;
+public static String parametro_funcion;
+public static String tipo_var;
 public static StringBuilder ambito = new StringBuilder();
 public static final HashMap<String,StringBuilder> ambitos = new HashMap<String,StringBuilder>();
 
@@ -498,12 +546,13 @@ public static final List<String> errores_semanticos = new ArrayList<>();
 public static final List<String> estructuras_sintacticas = new ArrayList<>();
 public static final HashMap<String,HashMap<Integer,Terceto>> estructura_Tercetos = new HashMap<>();
 public static final HashMap<Integer,Terceto> codigoIntermedio = new HashMap<>();
+public static final HashMap<String,String> funciones = new HashMap<>();
 public static final Stack pila = new Stack();
 public static int intDeclarando = 0;
 private static boolean errores_compilacion;
 private static String tipo;
 private static List<String> metodo = new ArrayList<>();
-private int punteroTerceto = 1;
+private static int punteroTerceto = 1;
 
 private static int contador_cadenas = 0;
 public static final String STRING_CHAR = "‘";
@@ -557,7 +606,9 @@ public String negarConstante(String constante) {
         return nuevo_lexema;
 }
 
-
+public static boolean mismoTipo (String str1, String str2, String ambito){
+	return TablaTipos.getTipo(str1, ambito).equals(TablaTipos.getTipo(str2, ambito));
+}
 public static void agregarError(List<String> errores,String errorType , String error) {
 
         int linea_actual = AnalizadorLexico.getLineaActual();
@@ -570,6 +621,9 @@ public static void agregarErrorSemantico(int linea, String error){
         errores_semanticos.add(Parser.ERROR + " (Linea " + linea + "): " + error);
 }
 
+public static boolean mismoTipoFuncion(String str1, String str2, String ambito){
+ return (funciones.get(str1).equals(TablaTipos.getTipo(str2, ambito)));
+}
 
 
 public static void agregarEstructura(List<String> estructuras, String estructura) {
@@ -609,6 +663,10 @@ public static void agregarSimbolo(String str, String tipo) {
                     	}
 
 
+}
+
+public static void agregarFuncion (String str1, String str2){
+ funciones.put(str1, str2);
 }
 
 //--FUNCIONES DE IMPRESION Y MAIN--//
@@ -655,6 +713,7 @@ public static void agregarListaTercetos(String s, HashMap<Integer,Terceto> t){
 	HashMap<Integer,Terceto> aux = new HashMap<Integer,Terceto>(t);
 	estructura_Tercetos.put(s, aux);
 	t.clear();
+	punteroTerceto = 1;
 }
 
 public static void imprimirListaTercetos() {

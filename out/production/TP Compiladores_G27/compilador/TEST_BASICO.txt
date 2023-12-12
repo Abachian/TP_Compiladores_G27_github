@@ -1,7 +1,8 @@
-{ VOID f() {
+{ VOID f(SHORT z,UINT x) {
             SHORT a,
             DOUBLE b,
             b =  -1.7976931348623156D+308 ,
+            z = 3_s,
            },
 },
 

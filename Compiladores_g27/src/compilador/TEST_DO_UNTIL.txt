@@ -1,12 +1,19 @@
-{ prog
+{
+UINT k,
 DO {
-   b= 1_ui+4_ui,
+   b= 1_ui+3_ui,
    DO {
-      b= 1_ui+4_ui,
-   }  UNTIL(b<8_s),
+      b= 2_ui+4_ui,
+   }  UNTIL(k<10_ui),
 }  UNTIL(b<8_s),
-},
 
+  k = 4_s + 6_ui,
+  z = 8_ui,
+  vv = 3_s,
+  l = 25_ui,
+  z = z + l,
+   p.o(xa),
+  k = mnb(l),
 
 
 
