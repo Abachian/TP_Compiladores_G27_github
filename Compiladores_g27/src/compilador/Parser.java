@@ -1574,6 +1574,8 @@ case 125:
                                 agregarError(errores_semanticos, Parser.ERROR, val_peek(2).sval + " variable no declarada");}
                                 if(!mismoTipo(val_peek(2).sval,val_peek(0).sval, ambito.toString())){
                                 agregarError(errores_semanticos, Parser.ERROR, "La operación requiere operandos del mismo tipo");
+                                System.out.println(TablaSimbolos.getTipo(val_peek(1).sval));
+                                  System.out.println(TablaSimbolos.getTipo(val_peek(3).sval));
 }}
 break;
 case 126:

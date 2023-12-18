@@ -1,11 +1,15 @@
-{ VOID f(SHORT z,UINT x) {
-            SHORT a,
-            DOUBLE b,
-            b =  -1.7976931348623156D+308 ,
-            z = 3_s,
-           },
+{ SHORT z,
+  UINT y,
+  DOUBLE w,
+  w = 1.2,
+  VOID f (UINT x){
+          x = 5_ui,
+          IF (x == 5_ui) {
+              x =  2_ui + 5_ui,
+            }
+          END_IF,
+      },
 },
-
 
 
 

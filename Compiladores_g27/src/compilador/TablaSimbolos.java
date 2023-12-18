@@ -2,6 +2,7 @@ package compilador;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class TablaSimbolos {
     public static final int NO_ENCONTRADO = -1;
@@ -17,6 +18,11 @@ public class TablaSimbolos {
     private static int identificador_siguiente = 1;
 
     public static Map<String,Integer> aparicionesLexema = new HashMap<>();
+
+    public static Set<Integer> obtenerConjuntoPunteros() {
+        return simbolos.keySet();
+    }
+
 
     public static void agregarSimbolo(String simbolo_nuevo) {
         Map<String, String> atributos = new HashMap<>();
