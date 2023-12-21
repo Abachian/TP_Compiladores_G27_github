@@ -492,7 +492,7 @@ parametro_real: expresion {}
 ;
 
 // TODO agregar ejecucion al cuerpo?
-declaracion_clase: header_clase '{' declaraciones '}' { salirAmbito();
+declaracion_clase: header_clase '{' declaraciones '}' ',' { salirAmbito();
  						tipo = TablaTipos.CLASS_TYPE;
 						int ptr_id = TablaSimbolos.obtenerSimbolo($1.sval + Parser.ambito.toString());
 						TablaSimbolos.agregarAtributo(ptr_id, "uso", "nombre de clase");

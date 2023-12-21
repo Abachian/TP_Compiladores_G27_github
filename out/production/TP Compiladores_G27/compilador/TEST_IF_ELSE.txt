@@ -1,4 +1,6 @@
-{ prog
+{
+SHORT aw,
+aw = 7_s + 2_s,
 IF ( aw + 4_s > c + 1_s) {
 
    RETURN (4_s + 5_ui),

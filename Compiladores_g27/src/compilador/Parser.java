@@ -935,8 +935,11 @@ public static void main(String[] args) {
                 Parser.imprimirErrores(errores_sintacticos, "Errores Sintacticos");
                 Parser.imprimirErrores(errores_semanticos, "Errores Semanticos");
                 Parser.imprimirEstructuras(estructuras_sintacticas, "Estructuras");
+                  GeneradorCodigo.generarCodigo();
+                  FileHelper.writeProgram("nuevoArchivo.asm", GeneradorCodigo.codigo.toString());
 
-        }
+
+}
 
 
 

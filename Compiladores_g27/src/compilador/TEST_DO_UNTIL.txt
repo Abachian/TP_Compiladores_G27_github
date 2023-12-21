@@ -1,20 +1,22 @@
 {
-UINT k,
-DO {
-   b= 1_ui+3_ui,
+
+  UINT b,
+  UINT z,
+  SHORT vv,
+  UINT l,
+
+
+
    DO {
       b= 2_ui+4_ui,
    }  UNTIL(k<10_ui),
-}  UNTIL(b<8_s),
 
-  k = 4_s + 6_ui,
+
   z = 8_ui,
   vv = 3_s,
   l = 25_ui,
   z = z + l,
-   p.o(xa),
+  p.o(xa),
   k = mnb(l),
-
-
 
 },
